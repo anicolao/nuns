@@ -1,0 +1,203 @@
+[
+  {
+    "id": "moonlit/movement",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 96,
+      "top": 14,
+      "width": 320,
+      "height": 484
+    },
+    "path": "/art/moonlit/movement.webp"
+  },
+  {
+    "id": "moonlit/wish",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 608,
+      "top": 14,
+      "width": 320,
+      "height": 484
+    },
+    "path": "/art/moonlit/wish.webp"
+  },
+  {
+    "id": "moonlit/blessing",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 1120,
+      "top": 14,
+      "width": 320,
+      "height": 484
+    },
+    "path": "/art/moonlit/blessing.webp"
+  },
+  {
+    "id": "moonlit/parchment",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 96,
+      "top": 327,
+      "width": 320,
+      "height": 170
+    },
+    "path": "/art/moonlit/parchment.webp"
+  },
+  {
+    "id": "moonlit/noise",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 538,
+      "top": 535,
+      "width": 226,
+      "height": 226
+    },
+    "path": "/art/moonlit/noise.webp"
+  },
+  {
+    "id": "moonlit/vanished",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 774,
+      "top": 535,
+      "width": 225,
+      "height": 226
+    },
+    "path": "/art/moonlit/vanished.webp"
+  },
+  {
+    "id": "moonlit/key",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 537,
+      "top": 768,
+      "width": 226,
+      "height": 225
+    },
+    "path": "/art/moonlit/key.webp"
+  },
+  {
+    "id": "moonlit/medicine",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 774,
+      "top": 768,
+      "width": 226,
+      "height": 224
+    },
+    "path": "/art/moonlit/medicine.webp"
+  },
+  {
+    "id": "moonlit/back",
+    "source": "art/sources/moonlit-atlas.png",
+    "crop": {
+      "left": 1056,
+      "top": 535,
+      "width": 300,
+      "height": 461
+    },
+    "path": "/art/moonlit/back.webp"
+  },
+  {
+    "id": "moonlit/movement-still",
+    "source": "art/sources/moonlit-movement-scenes.png",
+    "crop": {
+      "left": 0,
+      "top": 0,
+      "width": 768,
+      "height": 512
+    },
+    "path": "/art/moonlit/movement-still.webp"
+  },
+  {
+    "id": "moonlit/movement-sneak",
+    "source": "art/sources/moonlit-movement-scenes.png",
+    "crop": {
+      "left": 768,
+      "top": 0,
+      "width": 768,
+      "height": 512
+    },
+    "path": "/art/moonlit/movement-sneak.webp"
+  },
+  {
+    "id": "moonlit/movement-walk",
+    "source": "art/sources/moonlit-movement-scenes.png",
+    "crop": {
+      "left": 0,
+      "top": 512,
+      "width": 768,
+      "height": 512
+    },
+    "path": "/art/moonlit/movement-walk.webp"
+  },
+  {
+    "id": "moonlit/movement-run",
+    "source": "art/sources/moonlit-movement-scenes.png",
+    "crop": {
+      "left": 768,
+      "top": 512,
+      "width": 768,
+      "height": 512
+    },
+    "path": "/art/moonlit/movement-run.webp"
+  },
+  {
+    "id": "moonlit/selected",
+    "source": "art/sources/moonlit-selected.png",
+    "path": "/art/moonlit/selected.webp"
+  },
+  {
+    "id": "moonlit/board",
+    "source": "art/sources/moonlit-board-canonical.png",
+    "path": "/art/moonlit/board.webp"
+  },
+  {
+    "id": "moonlit/character-0",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 0,
+    "path": "/art/moonlit/character-0.webp"
+  },
+  {
+    "id": "moonlit/character-1",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 1,
+    "path": "/art/moonlit/character-1.webp"
+  },
+  {
+    "id": "moonlit/character-2",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 2,
+    "path": "/art/moonlit/character-2.webp"
+  },
+  {
+    "id": "moonlit/character-3",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 3,
+    "path": "/art/moonlit/character-3.webp"
+  },
+  {
+    "id": "moonlit/character-4",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 4,
+    "path": "/art/moonlit/character-4.webp"
+  },
+  {
+    "id": "moonlit/character-5",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 5,
+    "path": "/art/moonlit/character-5.webp"
+  },
+  {
+    "id": "moonlit/character-6",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 6,
+    "path": "/art/moonlit/character-6.webp"
+  },
+  {
+    "id": "moonlit/character-7",
+    "source": "art/sources/moonlit-characters.png",
+    "cell": 7,
+    "path": "/art/moonlit/character-7.webp"
+  }
+]

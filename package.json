@@ -1,0 +1,34 @@
+{
+  "name": "nuns-on-the-run",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite dev --host 0.0.0.0 --port 5207 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 4207 --strictPort",
+    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+    "art:prepare": "node scripts/prepare-art.mjs",
+    "test:unit": "node --experimental-strip-types --test tests/*.test.ts"
+  },
+  "devDependencies": {
+    "@sveltejs/adapter-static": "3.0.10",
+    "@sveltejs/kit": "2.69.3",
+    "@sveltejs/vite-plugin-svelte": "7.2.0",
+    "@types/node": "^24.19.2",
+    "@types/three": "^0.185.4",
+    "sharp": "^0.35.5",
+    "svelte": "5.56.5",
+    "svelte-check": "4.7.2",
+    "typescript": "5.9.3",
+    "vite": "8.1.4"
+  },
+  "dependencies": {
+    "three": "^0.185.1"
+  },
+  "license": "GPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/anicolao/nuns.git"
+  }
+}

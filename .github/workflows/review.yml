@@ -1,0 +1,94 @@
+name: Verify and publish review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:unit
+      - run: npm run build
+        env:
+          BASE_PATH: /nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-site
+          path: build
+  publish:
+    needs: verify
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: nuns-pages-publish
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://anicolao.github.io/nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}/
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-site
+          path: verified-site
+      - name: Retain previews and prepare Pages artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          PREVIEW: ${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}
+          REVIEW_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PREVIEW" =~ ^(pr[0-9]+|main)$ ]]
+          gh auth setup-git
+          site_dir="$RUNNER_TEMP/nuns-pages"
+          remote="https://github.com/$REPOSITORY.git"
+          if git ls-remote --exit-code --heads "$remote" gh-pages > /dev/null; then
+            git clone --single-branch --branch gh-pages "$remote" "$site_dir"
+          else
+            mkdir -p "$site_dir"
+            git -C "$site_dir" init -b gh-pages
+            git -C "$site_dir" remote add origin "$remote"
+          fi
+          rm -rf "$site_dir/$PREVIEW"
+          mkdir -p "$site_dir/$PREVIEW"
+          cp -R verified-site/. "$site_dir/$PREVIEW/"
+          touch "$site_dir/.nojekyll"
+          node --input-type=module <<'JS'
+          import {writeFileSync,readdirSync} from 'node:fs';
+          const root=process.env.RUNNER_TEMP+'/nuns-pages';
+          writeFileSync(root+'/'+process.env.PREVIEW+'/preview.json',JSON.stringify({revision:process.env.REVIEW_SHA,preview:process.env.PREVIEW},null,2)+'\n');
+          const previews=readdirSync(root).filter(name=>/^(pr[0-9]+|main)$/.test(name));
+          writeFileSync(root+'/index.html','<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nuns on the Run reviews</title><h1>Nuns on the Run reviews</h1><ul>'+previews.map(name=>'<li><a href="./'+name+'/">'+name+' · Animation lab</a></li>').join('')+'</ul></html>');
+          JS
+          git -C "$site_dir" config user.name github-actions[bot]
+          git -C "$site_dir" config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git -C "$site_dir" add .
+          if ! git -C "$site_dir" diff --cached --quiet; then
+            git -C "$site_dir" commit -m "Publish $PREVIEW from $REVIEW_SHA"
+            git -C "$site_dir" push origin gh-pages
+          fi
+          mkdir -p "$RUNNER_TEMP/pages-artifact"
+          cp -R "$site_dir/." "$RUNNER_TEMP/pages-artifact/"
+          rm -rf "$RUNNER_TEMP/pages-artifact/.git"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/pages-artifact
+      - uses: actions/deploy-pages@v4

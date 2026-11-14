@@ -1,0 +1,11 @@
+node_modules/
+.svelte-kit/
+build/
+.DS_Store
+*.log
+tmp/
+
+# Publisher research copies stay local; provenance and source URLs are tracked.
+art/reference/*.png
+art/reference/*.jpg
+art/reference/*.pdf
