@@ -1,4 +1,4 @@
-import {after,test} from 'node:test';import assert from 'node:assert/strict';
+import {after,test} from 'node:test';import {setTimeout as delay} from 'node:timers/promises';import assert from 'node:assert/strict';
 import {initializeApp,deleteApp,type FirebaseApp} from 'firebase/app';import {getAuth,connectAuthEmulator,signInAnonymously,signOut} from 'firebase/auth';import {getDatabase,connectDatabaseEmulator,get,ref,goOffline} from 'firebase/database';
 import {repository,roomCode} from '../../src/lib/backend/repository.ts';import {replay} from '../../src/lib/game/engine.ts';import type {GameEvent} from '../../src/lib/game/model.ts';
 const apps:FirebaseApp[]=[];const closers:(()=>void)[]=[];
@@ -13,7 +13,10 @@ test('simultaneous anonymous joins occupy contiguous immutable slots without dup
  const host=await client(),a=await client(),b=await client(),code=roomCode(),h=await connect(host,code);await h.repo.append({type:'create',capacity:3,mode:'personal'});
  const [x,y]=await Promise.all([connect(a,code),connect(b,code)]);
  await Promise.all([x.repo.append({type:'join',name:'Alice',role:'novice',character:0}),y.repo.append({type:'join',name:'Bora',role:'novice',character:1})]);
- await h.repo.refresh();const events=h.events();assert.equal(events.length,3);assert.deepEqual(events.map(e=>e.sequence),[1,2,3]);assert.equal(new Set(events.map(e=>e.id)).size,3);assert.equal(replay(events).state!.seats.length,2);
+ // SDK get() can use an active listener's complete local cache before remote
+ // subscriptions receive the other client's acknowledgement. Wait for delivery.
+ const deadline=Date.now()+5000;while(h.events().length<3&&Date.now()<deadline)await delay(10);
+ const events=h.events();assert.equal(events.length,3);assert.deepEqual(events.map(e=>e.sequence),[1,2,3]);assert.equal(new Set(events.map(e=>e.id)).size,3);assert.equal(replay(events).state!.seats.length,2);
 });
 test('lost acknowledgement retries the same stored ID exactly once and a new repository reconstructs it',async()=>{
  const c=await client(),code=roomCode(),connection=await connect(c,code);await connection.repo.append({type:'create',capacity:2,mode:'personal'});
