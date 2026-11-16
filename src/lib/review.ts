@@ -4,6 +4,10 @@ export type Speed = 'Still' | 'Sneak' | 'Walk' | 'Run';
 export type ReviewState = { guardDot: number; previousDot: number; facing: Facing; speed: Speed; caught: boolean; key: boolean; medicine: boolean; reversed: Record<string, boolean> };
 export type ReviewChoice = { type: 'move'; dot: number } | { type: 'face'; facing: Facing } | { type: 'speed'; speed: Speed } | { type: 'status' } | { type: 'collect'; item: 'key' | 'medicine' } | { type: 'reverse'; card: string };
 export const initialReview = (): ReviewState => ({guardDot:26,previousDot:40,facing:'North',speed:'Sneak',caught:false,key:false,medicine:false,reversed:{}});
+/** Apply a resolved capture, never a player decision or status toggle. */
+export function applyCapture(state: ReviewState) {
+ return {state:{...state,caught:true,speed:'Walk' as const,medicine:false},message:'Caught: movement changed to Walk; medicine returned. Keys retained.',accepted:true};
+}
 export function applyReview(state: ReviewState, choice: ReviewChoice): {state: ReviewState; message: string; accepted: boolean} {
  const next = {...state};
  const reject = (message: string) => ({state, message, accepted:false});
@@ -16,7 +20,7 @@ export function applyReview(state: ReviewState, choice: ReviewChoice): {state: R
  if(choice.type==='speed'){
   if(state.caught && choice.speed!=='Walk')return reject('You’ve been caught. Choose Walk to return to your cell.');
   next.speed=choice.speed;
- }else if(choice.type==='status') {next.caught=!state.caught;if(next.caught){next.speed='Walk';next.medicine=false;}}
+ }else if(choice.type==='status') {if(!state.caught)return applyCapture(state);next.caught=false;}
  else if(choice.type==='collect'){
   if(choice.item==='medicine'&&!state.key)return reject('You need the key before you can collect the medicine.');
   next[choice.item]=!state[choice.item];

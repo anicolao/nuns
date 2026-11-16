@@ -5,7 +5,7 @@ export const scenarios: {id:string; name:string; kind:Kind; hint:string; private
  {id:'blessing',name:'Turn a blessing',kind:'blessing',hint:'Turn the card and check both text wells at rest.',private:true},
  {id:'patrol',name:'Turn a patrol card',kind:'patrol',hint:'Turn the route card; check minimap and text after it settles.',private:false},
  {id:'collection',name:'Collect key and medicine',kind:'key',hint:'Try medicine first to review rejection. Collect the key, then medicine; Undo each action.',private:true},
- {id:'caught',name:'Caught and return',kind:'status',hint:'Change status and inspect the dependent movement and medicine changes. Undo restores them together.',private:true},
+ {id:'caught',name:'Caught and return',kind:'status',hint:'Use Simulate capture in the lab controls. The status updates automatically: Walk, medicine returned, key retained. Reset to repeat.',private:true},
  {id:'guard',name:'Move the Abbess',kind:'board',hint:'Tap a lit destination or drag the Abbess there. Tap her to turn; use the on-map Undo.',private:false},
  {id:'die',name:'Roll noise die',kind:'die',hint:'Tap the actual die to roll. Replay or scrub the resulting face change.',private:false}
 ];

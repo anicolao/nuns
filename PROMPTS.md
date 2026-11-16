@@ -57,3 +57,7 @@ In the "choose movement" animation, please move the checkmark to the bottom righ
 ## Prompt 12: Publish Movement Update
 
 Is it pushed to the PR for review? I do not see it in the lab
+
+## Prompt 13: Capture Presentation
+
+In the "caught and return" animation, why do we see only the bottom half of a card? We are also not sure why this is a player choice, because the player doesn't get to choose if they are caught

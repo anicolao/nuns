@@ -42,11 +42,12 @@
  <label>Review zoom <output>{zoom}%</output><input type="range" min="25" max="125" step="5" bind:value={zoom}/></label>
  <p class="muted">Viewport dimensions are real CSS pixels inside the play page. Zoom only changes how the lab displays it. Use 100% for legibility and touch review.</p>
  <div class="control-row"><button onclick={()=>{command('reset');changed();}}>Reset scene</button><button onclick={()=>command('undo')}>Undo action</button></div>
+ {#if scenario==='caught'}<button onclick={()=>command('capture')}>Simulate capture</button><p class="muted">Reviewer control: delivers a resolved capture to the shared status display. Capture is not a player choice. Reset scene to restore the starting state.</p>{/if}
  <h2>Playback</h2>
  <div class="control-row"><button disabled={!duration} onclick={()=>command('replay')}>Replay</button><button disabled={!duration} onclick={()=>command(running?'pause':'resume')}>{running?'Pause':'Play'}</button></div>
  <label>Timeline <output>{Math.round(time)} / {duration} ms</output><input aria-label="Animation timeline" type="range" min="0" max={duration||1} step="1" value={time} disabled={!duration} oninput={e=>command('seek',Number(e.currentTarget.value))}/></label>
  <label>Playback speed<select bind:value={rate} onchange={()=>command('speed',Number(rate))}><option value={.25}>¼×</option><option value={.5}>½×</option><option value={1}>1×</option><option value={2}>2×</option></select></label>
- <p class="muted">Perform an action on the piece first. Replay and scrubbing operate on its retained production animation. Reset restores the complete scenario state. OS reduced-motion preferences also apply.</p>
+ <p class="muted">{scenario==='caught'?'Use Simulate capture first.':'Perform an action on the piece first.'} Replay and scrubbing operate on its retained production animation. Reset restores the complete scenario state. OS reduced-motion preferences also apply.</p>
  <h2>Review this combination</h2>
  <p>{decision?`${decision.verdict} · ${new Date(decision.at).toLocaleDateString()}`:'Not reviewed'}</p>
  {#if decision?.note}<p class="muted">{decision.note}</p>{/if}

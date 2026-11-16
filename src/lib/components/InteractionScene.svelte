@@ -1,7 +1,7 @@
 <script lang="ts">
  import {onMount} from 'svelte';
  import Component from './Component.svelte';
- import {initialReview,applyReview,type ReviewState,type ReviewChoice} from '$lib/review';
+ import {initialReview,applyReview,applyCapture,type ReviewState,type ReviewChoice} from '$lib/review';
  import {findScenario} from '$lib/interaction-scenarios';
 
  import {MotionPlayer} from '$lib/motion/player';
@@ -19,6 +19,7 @@
   const result=applyReview(fixture,choice);message=result.message;rejected=!result.accepted;
   if(result.accepted){history=[...history,structuredClone($state.snapshot(fixture))];fixture=result.state;}
  }
+ function capture(){if(scenario!=='caught'||hidden||fixture.caught)return;const result=applyCapture(fixture);fixture=result.state;message=result.message;rejected=false;}
  function undo(){if(!history.length)return;fixture=history[history.length-1];history=history.slice(0,-1);message='Previous state restored.';rejected=false;}
  function reset(){motion.clear();motion.speed(1);history=[];fixture=seeded();selection=26;message='Scene reset.';rejected=false;revision++;}
  $effect(()=>{motion.reduced=reduced;});
@@ -28,7 +29,7 @@
   const receive=(event:MessageEvent)=>{
    if(!review||event.source!==parent||event.origin!==location.origin||event.data?.type!=='nuns:transport')return;
    const {action,value}=event.data;
-   if(action==='replay')motion.replay();else if(action==='pause')motion.pause();else if(action==='resume')motion.resume();else if(action==='seek')motion.seek(Number(value)||0);else if(action==='speed')motion.speed(Number(value)||1);else if(action==='reset')reset();else if(action==='undo')undo();
+   if(action==='capture')capture();else if(action==='replay')motion.replay();else if(action==='pause')motion.pause();else if(action==='resume')motion.resume();else if(action==='seek')motion.seek(Number(value)||0);else if(action==='speed')motion.speed(Number(value)||1);else if(action==='reset')reset();else if(action==='undo')undo();
   };
   window.addEventListener('message',receive);
   return()=>{window.removeEventListener('message',receive);motion.onupdate=undefined;motion.clear();};
@@ -43,7 +44,7 @@
  </section>{/key}
  {#if scenario==='caught'&&!hidden}<p class="dependent-fixture">Movement: <b>{fixture.speed}</b> · Key: <b>{fixture.key?'kept':'none'}</b> · Medicine: <b>{fixture.medicine?'held':'returned'}</b></p>{/if}
  </main>
- {#if !boardScene}<footer class="play-footer"><p class:rejected role="status">{message==='Choose an action.'?(['wish','blessing','patrol'].includes(scenario)?'Tap the card to turn it over.':scenario==='movement'?'Choose how you move.':''):message}</p><button disabled={!history.length} onclick={undo}>↶ Undo</button></footer>{:else}<span class="sr-only" role="status">{message}</span>{/if}
+ {#if !boardScene}<footer class="play-footer"><p class:rejected role="status">{message==='Choose an action.'?(['wish','blessing','patrol'].includes(scenario)?'Tap the card to turn it over.':scenario==='movement'?'Choose how you move.':''):message}</p>{#if scenario!=='caught'}<button disabled={!history.length} onclick={undo}>↶ Undo</button>{/if}</footer>{:else}<span class="sr-only" role="status">{message}</span>{/if}
 </div>
 <dialog bind:this={dialog} onclose={()=>inspecting=false} class="component-inspector"><header><h2>{scene.name}</h2><button onclick={()=>dialog.close()}>Return to play ✕</button></header>{#if inspecting}<div class="inspector-stage"><Component kind={scene.kind} state={fixture} onchoice={choose} inspectDot={selection} oninspect={dot=>selection=dot}/></div>{/if}</dialog>
 <style>

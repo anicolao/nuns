@@ -15,7 +15,7 @@ The current state adapter is the existing deterministic presentation adapter, no
 | Movement | Direct card choice, selection seal, all four cards visible, Undo |
 | Wish / blessing / patrol | Two-sided 3D turn, reverse turn, stable card size, inspect/return |
 | Key and medicine | Rejection before key, collection feedback, each Undo |
-| Caught | Status change, Walk selection, medicine return, key retention, complete Undo |
+| Caught | Lab-triggered resolved capture, read-only status, automatic Walk selection, medicine return and key retention; Reset to repeat |
 | Abbess | Tap/drag to an adjacent map space, tap pawn to turn, on-map Undo; phone pan/zoom |
 | Die | Tap the modeled die to generate a local noise result; quaternion interpolation |
 
@@ -40,3 +40,9 @@ The board fits the tabletop viewport with no scrollbars. A compact 24-unit pawn 
 Production cards turn when tapped, the movement hand uses a two-by-two phone layout and a four-card landscape layout, and the die itself rolls on tap. Diagnostic face selection remains in the gallery. The actual game has no separate move buttons, board audit panel, fixture-setting buttons or assigned viewing-edge text.
 
 Native Chrome verification of this revision covered tabletop tap-to-move (26 → 19), pawn-facing handles, on-map Undo, and dragging the same pawn from 19 → 20. The full board fit without game scrolling. Portrait and landscape phone movement hands showed all four cards, and the landscape wish used the same ArtCard’s readable side well without overflow. Camera tests check all 155 points in every device fit, phone focus, drop-coordinate round trips, anchored zoom and pan bounds. All 14 tests pass.
+
+## Capture presentation correction
+
+The status piece is read-only. Use **Simulate capture** in the lab shell to deliver a resolved capture through `applyCapture`, shared with the presentation adapter. Repeated capture events cannot release a novice. The player surface has no capture toggle or capture Undo; Reset scene in the lab restores the starting fixture. This reviews the consequence of a resolved capture, not a complete guard encounter or return-home journey.
+
+The status panel uses a compact horizontal layout on short landscape screens instead of retaining its portrait minimum height. Headless Chromium verification covered all five viewport sizes with normal and reduced motion: panel containment, no page overflow, inert status taps, and automatic Walk/medicine return/key retention. Type checks, all 14 unit tests and the static build pass.

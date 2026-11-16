@@ -1,12 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {initialReview,applyReview} from '../src/lib/review.ts';
+import {initialReview,applyReview,applyCapture} from '../src/lib/review.ts';
 
 test('capture fixture changes dependent values without changing the prior snapshot',()=>{
  let state=initialReview();state=applyReview(state,{type:'collect',item:'key'}).state;state=applyReview(state,{type:'collect',item:'medicine'}).state;state=applyReview(state,{type:'speed',speed:'Run'}).state;
- const before=structuredClone(state),caught=applyReview(state,{type:'status'});
+ const before=structuredClone(state),caught=applyCapture(state);
  assert.equal(caught.state.caught,true);assert.equal(caught.state.speed,'Walk');assert.equal(caught.state.key,true);assert.equal(caught.state.medicine,false);assert.deepEqual(state,before);
  const invalid=applyReview(caught.state,{type:'speed',speed:'Run'});assert.equal(invalid.accepted,false);assert.equal(invalid.state,caught.state);assert.match(invalid.message,/[Ww]alk.*cell/);
+ assert.deepEqual(applyCapture(caught.state).state,caught.state);
  assert.equal(before.speed,'Run');assert.equal(before.medicine,true);
 });
 test('medicine rejects before keys, guard movement rejects disconnected nodes',()=>{
