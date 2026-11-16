@@ -8,7 +8,7 @@
  const hasIllustration=$derived(!!illustration||!!artwork);
 </script>
 {#snippet cardBody()}
-<div data-motion-id={"selection:"+face+title} data-motion-state={String(selected)} class="painted-card" class:chosen={selected} class:reverse class:has-illustration={hasIllustration} class:movement-card={!!illustration} style:aspect-ratio="320 / 484" data-card-face={face}>
+<div data-motion-id={"selection:"+face+title} data-motion-state={String(selected)} data-motion-kind="selection" class="painted-card" class:chosen={selected} class:reverse class:has-illustration={hasIllustration} class:movement-card={!!illustration} style:aspect-ratio="320 / 484" data-card-face={face}>
  <div class="card-turner" data-motion-id={"flip:"+face+title} data-motion-kind="flip" data-motion-state={String(reverse)} style:transform={reverse?'rotateY(180deg)':'rotateY(0deg)'}>
  <div class="card-front" inert={reverse} aria-hidden={reverse}>
  <img class="card-body" src={`${base}/art/${style}/${face}.webp`} alt="" draggable="false"/>
@@ -23,7 +23,7 @@
 {#if readableLandscape}<div class="card-reading-layout" style:--parchment-image={`url('${base}/art/moonlit/parchment.webp')`}><div class="card-thumbnail" aria-hidden={landscape}>{@render cardBody()}</div><div class="card-reader" class:concealed={reverse} aria-hidden={reverse}><h3>{title}</h3>{#if children}{@render children()}{/if}</div></div>{:else}{@render cardBody()}{/if}
 
 <style>
- .painted-card{perspective:1100px}.card-turner{position:absolute;inset:0;transform-style:preserve-3d}.card-front,.card-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}.card-back{transform:rotateY(180deg)}.card-back .card-body{clip-path:none}
+ .painted-card{perspective:1100px}.movement-card .selection-seal{top:auto;bottom:2%;right:2%}.card-turner{position:absolute;inset:0;transform-style:preserve-3d}.card-front,.card-back{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}.card-back{transform:rotateY(180deg)}.card-back .card-body{clip-path:none}
 
  .card-reading-layout,.card-thumbnail{display:contents}.card-reader{display:none}
  @media(max-height:500px) and (min-width:600px){

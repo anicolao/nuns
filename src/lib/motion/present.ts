@@ -25,6 +25,7 @@ export function present(root: HTMLElement, options: Options) {
      const before = previous.get(node.dataset.motionId!); const after = current.get(node.dataset.motionId!)!;
      if (!before || before.state === after.state) continue;
      const kind = node.dataset.motionKind;
+     if (kind === 'selection' && after.state !== 'true') continue;
      let frames: Keyframe[];
      if (kind === 'flip') frames = [{transform:before.transform}, {transform:after.transform}];
      else if (kind === 'travel') {const scale=Number(node.closest<HTMLElement>('[data-board-scale]')?.dataset.boardScale??1);frames = [{translate:`${(before.rect.x-after.rect.x)/scale}px ${(before.rect.y-after.rect.y)/scale}px`}, {translate:'0px 0px'}];}

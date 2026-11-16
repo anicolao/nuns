@@ -45,3 +45,15 @@ abbess token is too large for the board, she covers two spaces. her direction ar
 ## Prompt 9: Publish GitHub Preview
 
 We need to switch how we're reviewing this project--let's make a GPLv3 public repo on github, and publish the animation lab on gh pages. The existing history can be the first PR on the github repo with a deployment at anicolao.github.io/nuns/pr1
+
+## Prompt 10: Repository Review
+
+review this repository and suggest next steps
+
+## Prompt 11: Movement Selection
+
+In the "choose movement" animation, please move the checkmark to the bottom right of the card to make it more visible against the bright background. Also in the same animation, only animate the newly selected card and not the previous selection.
+
+## Prompt 12: Publish Movement Update
+
+Is it pushed to the PR for review? I do not see it in the lab
