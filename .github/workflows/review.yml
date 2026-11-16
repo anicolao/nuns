@@ -90,10 +90,39 @@ jobs:
         with:
           path: ${{ runner.temp }}/pages-artifact
       - uses: actions/deploy-pages@v4
+      - name: Verify live preview revision
+        timeout-minutes: 2
+        env:
+          PREVIEW_URL: https://anicolao.github.io/nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}/
+          REVIEW_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --input-type=module <<'JS'
+          const expected = process.env.REVIEW_SHA;
+          const url = new URL('preview.json', process.env.PREVIEW_URL);
+          for (let attempt = 0; attempt < 12; attempt++) {
+            url.searchParams.set('revision', expected);
+            url.searchParams.set('attempt', String(attempt));
+            try {
+              const response = await fetch(url, {signal: AbortSignal.timeout(5000)});
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const preview = await response.json();
+              if (preview.revision === expected) {
+                console.log(`Live preview verified: ${expected}`);
+                process.exit(0);
+              }
+              console.log(`Waiting for ${expected}; live revision is ${preview.revision}`);
+            } catch (error) {
+              console.log(`Waiting for preview: ${error.message}`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+          throw new Error(`Live preview did not update to ${expected}`);
+          JS
       # Save only after successful deployment, so the next run restores live previews.
       - uses: actions/upload-artifact@v4
         with:
           name: retained-previews
+          overwrite: true
           path: ${{ runner.temp }}/pages-artifact
           include-hidden-files: true
           retention-days: 90
