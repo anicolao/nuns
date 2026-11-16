@@ -62,3 +62,5 @@ Review interactions in the [animation lab](http://localhost:5207/lab/), with rea
 [PR 1 animation lab](https://anicolao.github.io/nuns/pr1/) · [Repository](https://github.com/anicolao/nuns)
 
 Same-repository pull requests publish retained GitHub Pages previews at `/nuns/pr<number>/`. CI checks types, unit tests and a static build before deploying. Build locally for a prefix with `BASE_PATH=/nuns/pr1 npm run build`; the lab, gallery, play frames and artwork share that prefix. The root of each preview opens the animation lab. Publisher reference binaries remain local and ignored; their provenance and original links are in `art/reference/sources.json` and `docs/BOARD_REFERENCE.md`.
+
+Preview deployment restores the previous deployed bundle from the `retained-previews` Actions artifact, overlays the current preview, and publishes directly to Pages. It requires no branch push. Bundles are saved after successful deployment with 90-day retention, refreshed on each deployment. When no retained bundle remains, the workflow bootstraps from the legacy `gh-pages` branch.
