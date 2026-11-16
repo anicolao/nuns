@@ -69,3 +69,7 @@ why would you think that that is OK? We changed nothing, we expect the preview t
 ## Prompt 15: Gameplay Lab Scenarios
 
 The animation lab is missing several scenarios that prevent us from understanding what the game would look like: the UI for controlling novices, the guards hearing noises or seeing novices, catching a novice, and using a blessing that involves map interaction (such as false noise)
+
+## Prompt 16: Build Full Firebase Game
+
+first off, the novice movement was supposed to re-use the choose movement animation lab where we pick among the cards. so I am worried that hte animation lab isn't really built out of the production components/is a bunch of fakery rather than a real walkthrough of production ready UI components. Nonetheless, let's proceed to creating the full game based on the animation lab work so far. Refer to github.com/anicolao/istanbul github.com/anicolao/hanami and github.com/anicolao/roborally for examples of how we want to build event sourced games, and do this one the same way, backed by firebase realtime database with anonymous auth. you'll need to use the firebase cli and get authenticated as anicolao to create the project and set up anonymous auth, and use a nix flake  or npm as necessary to install any missing tools/software.

@@ -25,6 +25,6 @@ After novice movement, eligible novices roll against guards who walked previousl
 
 Capture earns a point, preserves keys, and loses an acquired wish. The caught novice walks toward home while visible; once ending unseen, returns to her cell and resumes normal status next turn. [Rules transcription](https://www.ultraboardgames.com/nuns-on-the-run/game-rules.php)
 
-## Before implementing the engine
+## Implementation contract
 
 Transcribe and review the full numbered graph, doors, patrol paths, card inventory, blessing timing, sight exceptions, caught-state protections, setup details, and end-phase ordering. Special sight tables and first-round edge cases require explicit fixtures. Do not infer rules from gallery art. Track unresolved interpretations with source/page references before locking a versioned edition manifest. Optional variants stay disabled until separately specified and tested.

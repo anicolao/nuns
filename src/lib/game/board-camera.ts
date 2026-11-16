@@ -5,7 +5,7 @@ export function fitCamera(width:number,height:number):Camera {
  return {x:(width-BOARD_WIDTH*scale)/2,y:(height-BOARD_HEIGHT*scale)/2,scale};
 }
 export function focusCamera(width:number,height:number,point:Point):Camera {
- const scale=Math.max(fitCamera(width,height).scale,Math.min(1.6,width/280));
+ const scale=Math.max(fitCamera(width,height).scale,Math.min(1.6,width/280,height/360));
  return clampCamera({x:width/2-point.x*scale,y:height/2-point.y*scale,scale},width,height);
 }
 export function clampCamera(camera:Camera,width:number,height:number):Camera {

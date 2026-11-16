@@ -18,6 +18,14 @@ jobs:
         with:
           node-version: '24'
           cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-15.36.0
       - run: npm ci
       - run: npm run check
       - run: npm run test:unit
@@ -28,10 +36,11 @@ jobs:
       - run: npm run test:browser
         env:
           BASE_PATH: /nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}
+      - run: npm run test:backend
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: browser-failures
+          name: browser-evidence
           path: test-results
           if-no-files-found: ignore
       - uses: actions/upload-artifact@v4
@@ -91,7 +100,7 @@ jobs:
           const root=process.env.RUNNER_TEMP+'/nuns-pages';
           writeFileSync(root+'/'+process.env.PREVIEW+'/preview.json',JSON.stringify({revision:process.env.REVIEW_SHA,preview:process.env.PREVIEW},null,2)+'\n');
           const previews=readdirSync(root).filter(name=>/^(pr[0-9]+|main)$/.test(name));
-          writeFileSync(root+'/index.html','<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nuns on the Run reviews</title><h1>Nuns on the Run reviews</h1><ul>'+previews.map(name=>'<li><a href="./'+name+'/">'+name+' · Animation lab</a></li>').join('')+'</ul></html>');
+          writeFileSync(root+'/index.html','<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nuns on the Run reviews</title><h1>Nuns on the Run reviews</h1><ul>'+previews.map(name=>'<li><a href="./'+name+'/">'+name+' · Play game</a></li>').join('')+'</ul></html>');
           JS
           mkdir -p "$RUNNER_TEMP/pages-artifact"
           cp -R "$site_dir/." "$RUNNER_TEMP/pages-artifact/"

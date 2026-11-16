@@ -41,10 +41,10 @@
  <label class="check"><input type="checkbox" bind:checked={reduced} onchange={changed}/>Reduced motion</label>
  <label>Review zoom <output>{zoom}%</output><input type="range" min="25" max="125" step="5" bind:value={zoom}/></label>
  <p class="muted">Viewport dimensions are real CSS pixels inside the play page. Zoom only changes how the lab displays it. Use 100% for legibility and touch review.</p>
- <div class="control-row"><button onclick={()=>{command('reset');changed();}}>Reset scene</button><button disabled={['hearing','sight','capture','false-noise'].includes(scenario)} onclick={()=>command('undo')}>Undo action</button></div>
+ <div class="control-row"><button onclick={()=>{command('reset');changed();}}>Reset scene</button><button disabled={['novice','hearing','sight','capture','false-noise'].includes(scenario)} onclick={()=>command('undo')}>Undo action</button></div>
  {#if scenario==='caught'}<button onclick={()=>command('capture')}>Simulate capture</button><p class="muted">Reviewer control: delivers a resolved capture to the shared status display. Capture is not a player choice. Reset scene to restore the starting state.</p>{/if}
- {#if scenario==='false-noise'}<button onclick={()=>command('next-hearing')}>Next hearing phase</button><p class="muted">Advance the fixture to the delayed blessing reveal. Target restrictions beyond the displayed direction fixture are not a complete card implementation.</p>{/if}
- {#if scenario==='hearing'}<p class="muted">The hearing die is seeded to 6 for repeatable review. This scenario uses the shared board’s distance and noise queries.</p>{/if}
+ {#if scenario==='false-noise'}<button onclick={()=>command('next-hearing')}>Next hearing phase</button><p class="muted">Advance the fixture to the delayed blessing reveal. The fixture advances through legal production reducer choices to the next hearing phase.</p>{/if}
+ {#if scenario==='hearing'}<p class="muted">The hearing die is seeded to 6 for repeatable review. Everything on the play surface uses the production game components, action handlers and reducer.</p>{/if}
  <h2>Playback</h2>
  <div class="control-row"><button disabled={!duration} onclick={()=>command('replay')}>Replay</button><button disabled={!duration} onclick={()=>command(running?'pause':'resume')}>{running?'Pause':'Play'}</button></div>
  <label>Timeline <output>{Math.round(time)} / {duration} ms</output><input aria-label="Animation timeline" type="range" min="0" max={duration||1} step="1" value={time} disabled={!duration} oninput={e=>command('seek',Number(e.currentTarget.value))}/></label>

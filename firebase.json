@@ -1,0 +1,22 @@
+{
+  "auth": {
+    "providers": {
+      "anonymous": true
+    }
+  },
+  "database": {
+    "rules": "database.rules.json"
+  },
+  "emulators": {
+    "auth": {
+      "port": 9297
+    },
+    "database": {
+      "port": 9197
+    },
+    "ui": {
+      "enabled": false
+    },
+    "singleProjectMode": true
+  }
+}

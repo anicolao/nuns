@@ -1,66 +1,78 @@
 # Nuns on the Run
 
-A browser-based digital adaptation of Fréderic Moyersoen’s **Nuns on the Run** (Mayfair Games, 2010), for **2–8 players**. Novices slip through an abbey after dark, retrieve a secret wish, and race home while the Abbess and Prioress listen, patrol, and give chase.
+A browser-based digital adaptation of Fréderic Moyersoen’s **Nuns on the Run** (Mayfair Games, 2010), for **2–8 players**. Novices slip through a moonlit abbey, retrieve a secret wish, and get home while the Abbess and Prioress listen, patrol, and give chase.
 
-Designed for phones, tablets, laptops, and a **55-inch horizontal touch table with private phones**. The implementation follows the neighboring Hanami, Pantheon, Can’t Stop, and Istanbul projects: reusable graphical components, deterministic game logic, replayable multiplayer rooms, and small browser-verified delivery slices.
+## Play
 
-## Current milestone: presentation and board interactions
+Open the entrance, create a room, and share its six-character code or QR invitation. Choose a novice or guard seat, mark ready, and let the host start. One player controls both guards through seven players; an eight-player room has two guard players and six novices.
 
-This repository currently contains a working **Svelte 5 / SvelteKit / TypeScript / Vite** component gallery, shared novice/guard/blessing board interactions, the original board’s movement/sight/hearing foundation, and project documentation. **There is no complete playable game, Firebase connection, room system, or full turn engine yet.** No cloud resources are required to review the art.
+Novices choose among the illustrated movement cards, plan directly on their private maps, edit uncommitted steps, and commit. Both first-round moves use the same card. Their key and wish are collected automatically at the appropriate locations. Guards select patrols, move by tapping or dragging their pieces, finish their walking/running movement, and resolve hearing. Sight, vanished and noise clues, captures, recovery, the 15-round limit, ties and rematches come from the same deterministic reducer.
 
-- [VISION.md](VISION.md): intended experience, device behavior, privacy, and success criteria.
-- [RULES.md](RULES.md): researched base-game summary and verification boundaries.
-- [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md): sibling implementation review, proposed architecture, and delivery plan.
-- [docs/ART_DIRECTION.md](docs/ART_DIRECTION.md): component coverage, direction briefs, and review guide.
+All four blessing effects are available from the private hand: Extra Move, noise-distance adjustment, re-roll and False Noise. A pending die result leaves time for a blessing before hearing resolves. False Noise is targeted on the map and its identity stays concealed until the specified delayed reveal.
 
-## Run the gallery
+Routes:
 
-Node.js 22.18+ (or a compatible newer version) and npm are required.
+- `/`: create or join a personal-screen game.
+- `/play/?room=CODE`: reopen a room.
+- `/tabletop/`: create a public shared display; players join on their phones.
+- `/controller/?room=CODE`: private phone entry.
+- `/lab/`: animation and production interaction review.
+- `/gallery/`: original Moonlit Storybook component inventory.
+
+The shared display exposes public guard actions while wishes, novice routes and private blessing decisions stay on their owners’ phones. Reloading restores the same anonymous seat and reconstructs play from immutable history. Route edits can be undone before commit; revealed input history is never rewritten.
+
+## Development and verification
+
+Use the pinned Nix flake for Node 24, Java 21 and a Chromium binary:
 
 ```sh
+nix develop
 npm ci
 npm run dev
 ```
 
-Open **http://localhost:5207/gallery/**. The root URL opens the animation lab. Vite binds to `0.0.0.0` so devices on the same network can use `http://<development-machine-LAN-IP>:5207/gallery/` when allowed by the machine’s firewall. The server’s Network URL gives the actual address.
-
-Review links:
-
-- [Board and topology audit](http://localhost:5207/gallery/?component=board)
-- [Movement cards](http://localhost:5207/gallery/?component=movement)
-- [Characters](http://localhost:5207/gallery/?component=novices)
-
-Moonlit Storybook is the approved and only art direction. Choose a component, use Enlarge, or inspect the original board’s dots, colored patrols, keys, locks, visibility and hearing. Card trays retain readable sizes and offer previous/next controls. Review actions support Undo and explained rejection. All private information is fixture data.
+Vite uses port **5207**, with LAN access for device review. `npm run preview` serves the production build on **4207**. Node 24.12+ and Java 21 can also be supplied outside Nix; `firebase-tools` is a pinned npm dependency.
 
 ```sh
 npm run check
 npm run test:unit
+npm run test:backend
 npm run build
-npm run preview
+npm run test:browser
 ```
 
-The production build is static output in `build/`. Preview uses port 4207. Stop a manually started dev server with Ctrl-C.
+`test:backend` starts isolated Auth/Realtime Database emulators and runs rules, retry/concurrency, and actual multi-browser gameplay journeys. It covers create/join/reload, complete guard and novice victories, rematch, and eight anonymous players committing simultaneously. `test:browser` exercises production components at phone portrait/landscape, tablet, laptop and tabletop sizes, normal/reduced motion, scrubbing, and public/private phone projection at all four tabletop acting edges. Run `npx playwright install chromium` when not using the flake’s browser.
 
-## Planned implementation
+For manual emulator play:
 
-Use SvelteKit’s static adapter and shared typed components, anonymous Firebase Authentication and Firestore rooms, versioned manifests, and pure deterministic reducers. Reconnect reconstructs the game from an immutable history; commands carry expected revisions and retry IDs. Vitest covers rules, emulator tests cover authorization and persistence, and Playwright proves complete multi-browser journeys with screenshots. See the [delivery sequence](docs/ARCHITECTURE.md#delivery-sequence).
+```sh
+npm run emulators
+# In a second shell:
+VITE_USE_FIREBASE_EMULATORS=true npm run dev
+```
 
-Hidden movement needs a deliberate privacy model. The shared table receives public clues and sightings; novice phones own routes, movement choices, wishes, blessings, and logs. Concealing an element with CSS is insufficient. A trusted-client replay prototype must be described honestly: a shared seed and complete history are inspectable by technical players. Real adversarial secrecy requires restricted private streams and a trusted resolver; that decision is an explicit early implementation gate.
+`BASE_PATH=/nuns/pr1 npm run build` produces the GitHub Pages prefix. CI checks types, rules, reducer and browser journeys before deploying. A live revision probe prevents a stale preview from reporting success. Previews are retained in deployment artifacts; publishing needs no repository-branch push. See [FIREBASE.md](FIREBASE.md) for the deployed backend and operator commands.
+
+## Architecture and review
+
+Realtime Database stores only versioned actor inputs at `rooms/{CODE}/events/{sequence}`. Pure replay derives the game. Transactions reserve immutable sequence slots; conflicts replay and revalidate, and lost acknowledgements reuse a durable retry ID. This follows the trusted-client event-sourced model used by [Istanbul](https://github.com/anicolao/istanbul), [Hanami](https://github.com/anicolao/hanami) and [RoboRally](https://github.com/anicolao/roborally), with Realtime Database as requested.
+
+Authentication and rules provide attribution, continuity and immutability. Authenticated invitation holders can inspect the full replay log, including hidden routes and setup randomness. Private projections prevent ordinary UI disclosure; they do not provide adversarial secrecy. There is no game server or Cloud Functions deployment.
+
+The lab and game mount the same `GameSurface`, `MovementHand`, board, cards, pieces, controls, presenter and reducer. The former independent encounter reducer and duplicate movement selector were removed. Lab seeds are explicit positions; every subsequent action follows the production reducer. The standalone card bench uses exactly the same movement hand as the novice’s first planning step.
+
+- [Event model and edition interpretations](docs/EVENT_MODEL.md)
+- [Lab guide](docs/ANIMATION_LAB.md)
+- [Rules summary](RULES.md)
+- [Original-board audit](docs/BOARD_REFERENCE.md)
+- [Experience and device vision](VISION.md)
+
+Physical 55-inch touch-table reach and viewing-distance approval remains a hardware review; scaled browser previews do not establish it. Computer players, expansions, optional variants and matchmaking are outside this base-game implementation.
 
 ## Source and art
 
-Rules research starts with the [published 2010 rulebook](https://www.mind-maze.uk/nuns-on-the-run/rules/notr-rules.pdf), cross-checked against the [UltraBoardGames transcription](https://www.ultraboardgames.com/nuns-on-the-run/game-rules.php). The source rules remain authoritative; the summary is not a replacement rulebook.
+The source rules are the [published 2010 English rulebook](https://www.mind-maze.uk/nuns-on-the-run/rules/notr-rules.pdf). The complete blessing inventory and About Turn cards are cross-checked against the [designer-associated French rules/card translation](https://www.jeuxavolonte.asso.fr/regles/nuns_on_the_run.pdf). Interpretation boundaries are recorded in the event-model document.
 
-The graphical pieces use original imagegen artwork assembled into 23 local runtime layers. Source PNGs, character alpha, exact prompts and reproducible crops are retained in `art/` and `static/art/`. Run `npm run art:prepare` to reproduce delivery assets. See [VISUAL_DESIGN.md](VISUAL_DESIGN.md) and [UX_DESIGN_PRINCIPLES.md](UX_DESIGN_PRINCIPLES.md).
+The original board foundation retains all 155 spaces, 199 undirected connections, colored patrols, locks, keys and explicit visibility tables. Logical topology is independent of the painted underlay. Original generated Moonlit Storybook sources, exact prompts and reproducible crops are retained in `art/` and `static/art/`; `npm run art:prepare` regenerates delivery assets.
 
-The board is reconstructed from original 2010 references: all 155 spaces, 199 undirected connections, colored patrols, locks, key/goal sites and explicit visibility tables. [Board reference and audit notes](docs/BOARD_REFERENCE.md) document the sources and verification. Reference publisher images are research inputs, not shipped artwork. Gameplay topology is independent of the painted underlay. This is an independent project; no official endorsement or release license is claimed. Original project code and generated artwork are licensed under GPL-3.0-only; see [LICENSE](LICENSE). Publisher game names, rules and research reference images are not relicensed. The reused Istanbul dice renderer retains its GPL-3.0-only license; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
-
-Review novice route planning, guard hearing and sight, map capture, False Noise placement, and component interactions in the [animation lab](http://localhost:5207/lab/), with real phone, tablet, laptop and tabletop viewports. It embeds the shared [play surface](http://localhost:5207/play/), production Svelte pieces and animation presenter. See [docs/ANIMATION_LAB.md](docs/ANIMATION_LAB.md) for scenarios, playback and approval records.
-
-## Review on GitHub
-
-[PR 1 animation lab](https://anicolao.github.io/nuns/pr1/) · [Repository](https://github.com/anicolao/nuns)
-
-Same-repository pull requests publish retained GitHub Pages previews at `/nuns/pr<number>/`. CI checks types, unit tests and a static build before deploying. Build locally for a prefix with `BASE_PATH=/nuns/pr1 npm run build`; the lab, gallery, play frames and artwork share that prefix. The root of each preview opens the animation lab. Publisher reference binaries remain local and ignored; their provenance and original links are in `art/reference/sources.json` and `docs/BOARD_REFERENCE.md`.
-
-Preview deployment restores the previous deployed bundle from the `retained-previews` Actions artifact, overlays the current preview, and publishes directly to Pages. The publish job checks the live revision before reporting success. It requires no branch push. Bundles are saved after successful deployment with 90-day retention, refreshed on each deployment. When no retained bundle remains, the workflow bootstraps from the legacy `gh-pages` branch.
+This is an independent project with no official endorsement. Original code and generated artwork are GPL-3.0-only; see [LICENSE](LICENSE). Publisher names, rules and reference images are not relicensed. The reused Istanbul dice renderer retains its GPL-3.0-only license; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

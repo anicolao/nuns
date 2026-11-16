@@ -1,2 +1,2 @@
-<script lang="ts">import AnimationLab from '$lib/AnimationLab.svelte';</script>
-<AnimationLab/>
+<script lang="ts">import GameHub from '$lib/GameHub.svelte';</script>
+<GameHub/>

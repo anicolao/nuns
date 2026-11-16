@@ -1,0 +1,27 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "rooms": {
+      "$room": {
+        ".read": "auth != null",
+        "events": {
+          ".indexOn": ["sequence"],
+          "$sequence": {
+            ".write": "auth != null && !data.exists() && newData.exists()",
+            ".validate": "newData.hasChildren(['id','actor','sequence','version','intent']) && newData.child('actor').val() == auth.uid && newData.child('version').val() == 1 && newData.child('sequence').isNumber() && newData.child('sequence').val() % 1 == 0 && newData.child('sequence').val() >= 1 && $sequence == newData.child('sequence').val() + '' && ((newData.child('sequence').val() == 1 && newData.child('intent/type').val() == 'create') || (newData.child('sequence').val() > 1 && root.child('rooms').child($room).child('events').child((newData.child('sequence').val() - 1) + '').exists()))",
+            "id": { ".validate": "newData.isString() && newData.val().length >= 8 && newData.val().length <= 100" },
+            "actor": { ".validate": "newData.isString() && newData.val() == auth.uid" },
+            "sequence": { ".validate": "newData.isNumber()" },
+            "version": { ".validate": "newData.val() == 1" },
+            "intent": {
+              ".validate": "newData.hasChildren(['type']) && newData.child('type').isString() && newData.child('type').val().matches(/^(create|join|ready|start|patrol|novice-move|novice-roll|guard-step|guard-speed|guard-finish|guard-roll|resolve-roll|blessing|advance|rematch)$/)"
+            },
+            "$other": { ".validate": false }
+          }
+        },
+        "$other": { ".validate": false }
+      }
+    }
+  }
+}

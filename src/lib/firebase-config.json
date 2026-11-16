@@ -1,0 +1,11 @@
+{
+  "projectId": "nuns-anicolao",
+  "appId": "1:481010513811:web:db21f66ac24e7a38695a66",
+  "storageBucket": "nuns-anicolao.firebasestorage.app",
+  "apiKey": "AIzaSyCPHEKdksU_7xG0rXzKMrPnPj51Cq7gP9w",
+  "authDomain": "nuns-anicolao.firebaseapp.com",
+  "messagingSenderId": "481010513811",
+  "projectNumber": "481010513811",
+  "version": "2",
+  "databaseURL": "https://nuns-anicolao-default-rtdb.firebaseio.com"
+}

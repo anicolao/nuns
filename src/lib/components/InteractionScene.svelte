@@ -2,7 +2,8 @@
  import {onMount} from 'svelte';
  import Component from './Component.svelte';
  import EncounterBoard from './EncounterBoard.svelte';
- import type {EncounterMode,PublicEncounter} from '$lib/game/encounter';
+ import type {FixtureMode as EncounterMode} from '$lib/lab/fixtures';
+ import type {PublicGame as PublicEncounter} from '$lib/game/projection';
  import {initialReview,applyReview,applyCapture,type ReviewState,type ReviewChoice} from '$lib/review';
  import {findScenario} from '$lib/interaction-scenarios';
 

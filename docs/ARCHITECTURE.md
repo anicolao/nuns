@@ -1,4 +1,8 @@
-# Architecture and implementation plan
+# Architecture
+
+The implemented event model, current boundaries, Firebase operations and interpretation register are now in [EVENT_MODEL.md](EVENT_MODEL.md) and [../FIREBASE.md](../FIREBASE.md). The original delivery proposal below records the presentation milestone; its Firestore proposal was superseded by the requested Realtime Database implementation.
+
+# Original presentation-milestone plan
 
 ## Review of neighboring implementations
 
