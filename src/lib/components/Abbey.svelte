@@ -1,11 +1,12 @@
 <script lang="ts">
  import {base} from '$app/paths';
+ import type {Snippet} from 'svelte';
  import {onMount,tick} from 'svelte';
  import AbbessPawn from './AbbessPawn.svelte';
  import {fitCamera,focusCamera,clampCamera,zoomCamera,worldPoint,type Camera} from '$lib/game/board-camera';
  import type {Style} from '$lib/catalog';import type {ReviewState,ReviewChoice} from '$lib/review';
  import{board,nodes,nodeById,connections,patrols,colors,endpoints,edgeId,edgeColors,polyline,offsetPoints,pathPoints,doors,neighbors,roomAt,distance,shortestPath,isVisible,isHeard,soundDirections,type Facing}from '$lib/game/board';
- let {style='moonlit',state:fixture,onchoice,inspectDot=26,oninspect,audit=false,tabletop=false,onundo,canUndo=false}=$props<{style?:Style;state:ReviewState;onchoice?:(choice:ReviewChoice)=>void;inspectDot?:number;oninspect?:(dot:number)=>void;audit?:boolean;tabletop?:boolean;onundo?:()=>void;canUndo?:boolean}>();
+ let {style='moonlit',state:fixture,onchoice,inspectDot=26,oninspect,audit=false,tabletop=false,onundo,canUndo=false,interaction='guard',focusDot,boardOverlay,boardControls,heading,hint,showFacing=true}=$props<{style?:Style;state:ReviewState;onchoice?:(choice:ReviewChoice)=>void;inspectDot?:number;oninspect?:(dot:number)=>void;audit?:boolean;tabletop?:boolean;onundo?:()=>void;canUndo?:boolean;interaction?:'guard'|'view';focusDot?:number;boardOverlay?:Snippet;boardControls?:Snippet<[Camera]>;heading?:string;hint?:string;showFacing?:boolean}>();
  let zoom=$state(1300),showSight=$state(false),showSound=$state(false),showWalls=$state(false),showLabels=$state(true),route=$state(-1),roll=$state(6),modifier=$state(0),walking=$state(true);
  let map=$state<HTMLDivElement>();
  let viewport=$state<HTMLDivElement>(),width=$state(1),height=$state(1),camera=$state<Camera>({x:0,y:0,scale:1}),overview=$state(false),turning=$state(false),dragPoint=$state<{x:number;y:number}|null>(null),notice=$state('');
@@ -14,10 +15,10 @@
  const guard=$derived(nodeById.get(fixture.guardDot)!);
  const directionSymbol=$derived(fixture.facing==='North'?'↑':fixture.facing==='East'?'→':fixture.facing==='South'?'↓':'←');
  const pawnScreen=$derived({x:camera.x+guard.x*camera.scale,y:camera.y+guard.y*camera.scale});
- function measure(){if(!viewport)return;width=viewport.clientWidth;height=viewport.clientHeight;camera=tabletop||overview||(width>=700&&height>=600)?fitCamera(width,height):focusCamera(width,height,guard);}
+ function measure(){if(!viewport)return;width=viewport.clientWidth;height=viewport.clientHeight;camera=tabletop||overview||(width>=700&&height>=600)?fitCamera(width,height):focusCamera(width,height,nodeById.get(focusDot??fixture.guardDot)!);}
  onMount(()=>{if(!viewport)return;const observer=new ResizeObserver(measure);observer.observe(viewport);measure();return()=>observer.disconnect();});
  function settleMeasurements(){viewport?.dispatchEvent(new CustomEvent('motion:land',{bubbles:true}));}
- function focus(){overview=false;camera=focusCamera(width,height,guard);turning=false;void tick().then(settleMeasurements);}
+ function focus(){overview=false;camera=focusCamera(width,height,nodeById.get(focusDot??fixture.guardDot)!);turning=false;void tick().then(settleMeasurements);}
  function showAbbey(){overview=true;camera=fitCamera(width,height);turning=false;void tick().then(settleMeasurements);}
  function magnify(factor:number){overview=false;camera=zoomCamera(camera,width,height,camera.scale*factor);void tick().then(settleMeasurements);}
  function move(dot:number){turning=false;notice='';settleMeasurements();onchoice?.({type:'move',dot});}
@@ -64,7 +65,7 @@
  {/if}
  <!-- svelte-ignore a11y_no_noninteractive_tabindex (Keyboard focus enables two-dimensional map scrolling.) -->
  <div bind:this={viewport} bind:clientWidth={width} bind:clientHeight={height} class="board-viewport" class:audit-viewport={audit} role="region" aria-label="Abbey board" tabindex="0" onpointermove={pointerMove} onpointerup={pointerUp} onpointercancel={cancelDrag} onpointerdown={e=>{if((e.target as HTMLElement).closest('button'))return;pointerDown(e,'pan');}} onwheel={wheel}>
- {#if !audit}<div class="board-hud" style:left={Math.max(12,camera.x+12)+'px'} style:right={Math.max(12,width-camera.x-1000*camera.scale+12)+'px'} style:top={Math.max(12,camera.y+12)+'px'}><div class="abbess-location"><b>Abbess · {fixture.guardDot}</b><span>{directionSymbol} {fixture.facing}</span></div><div class="map-tools">{#if !tabletop}<button onclick={focus} aria-label="Find the Abbess">◎</button><button onclick={showAbbey}>Whole abbey</button><button onclick={()=>magnify(1.35)} aria-label="Zoom in">＋</button><button onclick={()=>magnify(1/1.35)} aria-label="Zoom out">−</button>{/if}{#if onundo}<button onclick={onundo} disabled={!canUndo} aria-label="Undo move">↶</button>{/if}</div></div>{/if}
+ {#if !audit}<div class="board-hud" style:left={Math.max(12,camera.x+12)+'px'} style:right={Math.max(12,width-camera.x-1000*camera.scale+12)+'px'} style:top={Math.max(12,camera.y+12)+'px'}><div class="abbess-location"><b>{heading??`Abbess · ${fixture.guardDot}`}</b>{#if showFacing}<span>{directionSymbol} {fixture.facing}</span>{/if}</div><div class="map-tools">{#if !tabletop}<button onclick={focus} aria-label="Focus on the action">◎</button><button onclick={showAbbey}>Whole abbey</button><button onclick={()=>magnify(1.35)} aria-label="Zoom in">＋</button><button onclick={()=>magnify(1/1.35)} aria-label="Zoom out">−</button>{/if}{#if onundo}<button onclick={onundo} disabled={!canUndo} aria-label="Undo move">↶</button>{/if}</div></div>{/if}
  <div bind:this={map} class="map-tray canonical-map-tray">
  <div class="canonical-board" style:width={audit?zoom+'px':'1000px'} style:transform={audit?undefined:`translate(${camera.x}px,${camera.y}px) scale(${camera.scale})`} data-board-scale={audit?1:camera.scale} data-node-count={nodes.length} data-edge-count={connections.length}>
  <img class="canonical-painting" src={base + '/art/moonlit/board.webp'} alt="Moonlit Storybook painting preserving the original 2010 abbey floorplan" draggable="false"/>
@@ -87,15 +88,18 @@
  {#if audit&&path.length>1}<polyline points={polyline(pathPoints(path))} class="audit-path"/>{/if}
  </svg>
  {#if audit}{#each nodes as dot}<button disabled={zoom<1300} class="canonical-node-hit" style:left={dot.x/10+'%'} style:top={dot.y/10.38+'%'} aria-label={`Inspect dot ${dot.id}: ${roomAt(dot.id)}`} aria-pressed={selected.id===dot.id} onclick={()=>oninspect?.(dot.id)} data-dot={dot.id}></button>{/each}{/if}
+ {#if boardOverlay}{@render boardOverlay()}{/if}
  <div class="canonical-guard compact-guard" data-motion-id="abbess" data-motion-kind="travel" data-motion-state={fixture.guardDot+fixture.facing} style:left={(dragPoint?.x??guard.x)/10+'%'} style:top={(dragPoint?.y??guard.y)/10.38+'%'}><AbbessPawn facing={fixture.facing}/></div>
  </div></div>
  {#if !audit}
- <div class="board-touch-layer">
+ {#if interaction==='guard'}<div class="board-touch-layer">
  {#each legal as id}{@const dot=nodeById.get(id)!}<button class="move-destination" style:left={camera.x+dot.x*camera.scale+'px'} style:top={camera.y+dot.y*camera.scale+'px'} onclick={()=>move(id)} aria-label={`Move Abbess to ${id}, ${roomAt(id)}`} data-destination={id}><span>{id}</span></button>{/each}
  <button class="pawn-grab" style:left={camera.x+(dragPoint?.x??guard.x)*camera.scale+'px'} style:top={camera.y+(dragPoint?.y??guard.y)*camera.scale+'px'} aria-label={`Abbess at ${fixture.guardDot}, facing ${fixture.facing}. Tap to turn or drag to a lit space.`} aria-expanded={turning} onpointerdown={e=>pointerDown(e,'pawn')} onclick={e=>{if(e.detail===0)turning=!turning;}}></button>
  </div>
  {#if turning}<div class="turn-compass" style:left={Math.max(94,Math.min(width-94,pawnScreen.x))+'px'} style:top={Math.max(120,Math.min(height-125,pawnScreen.y))+'px'}><span>Turn Abbess</span>{#each ['North','East','South','West'] as facing}<button class={facing.toLowerCase()} aria-label={`Face ${facing}`} aria-pressed={fixture.facing===facing} onclick={()=>{onchoice?.({type:'face',facing:facing as Facing});turning=false;}}>{({North:'↑',East:'→',South:'↓',West:'←'})[facing]}<small>{facing}</small></button>{/each}<button class="close-turn" aria-label="Close turn controls" onclick={()=>turning=false}>×</button></div>{/if}
- <p class="board-hint" role="status">{notice||(turning?'Choose where she looks.':'Tap a lit space, or drag the Abbess. Tap her to turn.')}</p>
+ {/if}
+ {#if boardControls}{@render boardControls(camera)}{/if}
+ <p class="board-hint" role="status">{notice||hint||(turning?'Choose where she looks.':'Tap a lit space, or drag the Abbess. Tap her to turn.')}</p>
  {/if}
  </div>
  {#if audit}

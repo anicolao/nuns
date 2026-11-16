@@ -34,7 +34,7 @@ As gameplay is added, introduce these boundaries:
 4. `game/repository`: authentication, ordered append-only persistence, expected revisions, immutable command receipts, idempotent retry and reconnect. Firestore Security Rules enforce attribution and immutable authorized records.
 5. `presentation`: board, pieces, cards, private route planner, clues, public history, accessible alternatives, motion derived from accepted transitions. Gallery fixtures use these same components as they become production-ready.
 
-Future routes: `/play/` for remote rooms, `/tabletop/` for the public display, and a seat-bound `/controller/` phone view. These routes do not exist yet. `/` and `/gallery/` currently show the art review.
+Future routes: `/play/` for remote rooms, `/tabletop/` for the public display, and a seat-bound `/controller/` phone view. `/play/` currently hosts shared presentation interactions, including the board encounter slice; it is not a networked room. `/tabletop/` and `/controller/` do not exist yet. `/` opens the animation lab, and `/gallery/` shows the art review.
 
 ## Privacy decision
 

@@ -65,3 +65,7 @@ In the "caught and return" animation, why do we see only the bottom half of a ca
 ## Prompt 14: Restore Working Preview
 
 why would you think that that is OK? We changed nothing, we expect the preview to work
+
+## Prompt 15: Gameplay Lab Scenarios
+
+The animation lab is missing several scenarios that prevent us from understanding what the game would look like: the UI for controlling novices, the guards hearing noises or seeing novices, catching a novice, and using a blessing that involves map interaction (such as false noise)

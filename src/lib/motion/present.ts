@@ -23,11 +23,13 @@ export function present(root: HTMLElement, options: Options) {
     const reduced = options.player.reduced || matchMedia('(prefers-reduced-motion: reduce)').matches;
     if (!reduced) for (const node of elements()) {
      const before = previous.get(node.dataset.motionId!); const after = current.get(node.dataset.motionId!)!;
-     if (!before || before.state === after.state) continue;
+     if (!before && node.dataset.motionEnter !== 'true') continue;
+     if (before?.state === after.state) continue;
      const kind = node.dataset.motionKind;
      if (kind === 'selection' && after.state !== 'true') continue;
      let frames: Keyframe[];
-     if (kind === 'flip') frames = [{transform:before.transform}, {transform:after.transform}];
+     if (!before) frames = [{opacity:0,scale:.65},{opacity:1,scale:1}];
+     else if (kind === 'flip') frames = [{transform:before.transform}, {transform:after.transform}];
      else if (kind === 'travel') {const scale=Number(node.closest<HTMLElement>('[data-board-scale]')?.dataset.boardScale??1);frames = [{translate:`${(before.rect.x-after.rect.x)/scale}px ${(before.rect.y-after.rect.y)/scale}px`}, {translate:'0px 0px'}];}
      else frames = [{translate:'0px 0px',scale:1}, {translate:'0px -10px',scale:1.035,offset:.4}, {translate:'0px 0px',scale:1}];
      animations.push(node.animate(frames, {duration:640,easing:'cubic-bezier(.22,.7,.25,1)',fill:'both'}));

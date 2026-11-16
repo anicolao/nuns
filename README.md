@@ -4,9 +4,9 @@ A browser-based digital adaptation of Fréderic Moyersoen’s **Nuns on the Run*
 
 Designed for phones, tablets, laptops, and a **55-inch horizontal touch table with private phones**. The implementation follows the neighboring Hanami, Pantheon, Can’t Stop, and Istanbul projects: reusable graphical components, deterministic game logic, replayable multiplayer rooms, and small browser-verified delivery slices.
 
-## Current milestone: art direction
+## Current milestone: presentation and board interactions
 
-This repository currently contains a working **Svelte 5 / SvelteKit / TypeScript / Vite** component gallery, the original board’s movement/sight/hearing foundation, and project documentation. **There is no complete playable game, Firebase connection, room system, or full turn engine yet.** No cloud resources are required to review the art.
+This repository currently contains a working **Svelte 5 / SvelteKit / TypeScript / Vite** component gallery, shared novice/guard/blessing board interactions, the original board’s movement/sight/hearing foundation, and project documentation. **There is no complete playable game, Firebase connection, room system, or full turn engine yet.** No cloud resources are required to review the art.
 
 - [VISION.md](VISION.md): intended experience, device behavior, privacy, and success criteria.
 - [RULES.md](RULES.md): researched base-game summary and verification boundaries.
@@ -55,7 +55,7 @@ The graphical pieces use original imagegen artwork assembled into 23 local runti
 
 The board is reconstructed from original 2010 references: all 155 spaces, 199 undirected connections, colored patrols, locks, key/goal sites and explicit visibility tables. [Board reference and audit notes](docs/BOARD_REFERENCE.md) document the sources and verification. Reference publisher images are research inputs, not shipped artwork. Gameplay topology is independent of the painted underlay. This is an independent project; no official endorsement or release license is claimed. Original project code and generated artwork are licensed under GPL-3.0-only; see [LICENSE](LICENSE). Publisher game names, rules and research reference images are not relicensed. The reused Istanbul dice renderer retains its GPL-3.0-only license; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
 
-Review interactions in the [animation lab](http://localhost:5207/lab/), with real phone, tablet, laptop and tabletop viewports. It embeds the shared [play surface](http://localhost:5207/play/), production Svelte pieces and animation presenter. See [docs/ANIMATION_LAB.md](docs/ANIMATION_LAB.md) for scenarios, playback and approval records.
+Review novice route planning, guard hearing and sight, map capture, False Noise placement, and component interactions in the [animation lab](http://localhost:5207/lab/), with real phone, tablet, laptop and tabletop viewports. It embeds the shared [play surface](http://localhost:5207/play/), production Svelte pieces and animation presenter. See [docs/ANIMATION_LAB.md](docs/ANIMATION_LAB.md) for scenarios, playback and approval records.
 
 ## Review on GitHub
 

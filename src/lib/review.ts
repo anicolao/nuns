@@ -5,7 +5,7 @@ export type ReviewState = { guardDot: number; previousDot: number; facing: Facin
 export type ReviewChoice = { type: 'move'; dot: number } | { type: 'face'; facing: Facing } | { type: 'speed'; speed: Speed } | { type: 'status' } | { type: 'collect'; item: 'key' | 'medicine' } | { type: 'reverse'; card: string };
 export const initialReview = (): ReviewState => ({guardDot:26,previousDot:40,facing:'North',speed:'Sneak',caught:false,key:false,medicine:false,reversed:{}});
 /** Apply a resolved capture, never a player decision or status toggle. */
-export function applyCapture(state: ReviewState) {
+export function applyCapture<T extends Pick<ReviewState,'caught'|'speed'|'medicine'>>(state: T) {
  return {state:{...state,caught:true,speed:'Walk' as const,medicine:false},message:'Caught: movement changed to Walk; medicine returned. Keys retained.',accepted:true};
 }
 export function applyReview(state: ReviewState, choice: ReviewChoice): {state: ReviewState; message: string; accepted: boolean} {

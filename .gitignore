@@ -9,3 +9,7 @@ tmp/
 art/reference/*.png
 art/reference/*.jpg
 art/reference/*.pdf
+
+# Browser verification artifacts
+test-results/
+playwright-report/

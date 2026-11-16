@@ -1,11 +1,16 @@
 <script lang="ts">
  import {onMount} from 'svelte';
  import Component from './Component.svelte';
+ import EncounterBoard from './EncounterBoard.svelte';
+ import type {EncounterMode,PublicEncounter} from '$lib/game/encounter';
  import {initialReview,applyReview,applyCapture,type ReviewState,type ReviewChoice} from '$lib/review';
  import {findScenario} from '$lib/interaction-scenarios';
 
  import {MotionPlayer} from '$lib/motion/player';
  let {scenario='movement',publicView=false,reduced=false,review=false}=$props<{scenario?:string;publicView?:boolean;reduced?:boolean;review?:boolean}>();
+ const encounterMode=$derived(['novice','hearing','sight','capture','false-noise'].includes(scenario)?scenario as EncounterMode:null);
+ let encounter=$state<EncounterBoard>(),incoming=$state<PublicEncounter|null>(null);
+ function project(view:PublicEncounter){if(review&&!publicView)parent.postMessage({type:'nuns:projection',view},location.origin);}
  const scene=$derived(findScenario(scenario));
  const hidden=$derived(publicView&&scene.private);
  const kind=$derived(hidden?'board':scene.kind);
@@ -21,15 +26,17 @@
  }
  function capture(){if(scenario!=='caught'||hidden||fixture.caught)return;const result=applyCapture(fixture);fixture=result.state;message=result.message;rejected=false;}
  function undo(){if(!history.length)return;fixture=history[history.length-1];history=history.slice(0,-1);message='Previous state restored.';rejected=false;}
- function reset(){motion.clear();motion.speed(1);history=[];fixture=seeded();selection=26;message='Scene reset.';rejected=false;revision++;}
+ function reset(){motion.clear();motion.speed(1);history=[];fixture=seeded();selection=26;message='Scene reset.';rejected=false;incoming=null;revision++;}
  $effect(()=>{motion.reduced=reduced;});
  onMount(()=>{
   const report=()=>{if(review)parent.postMessage({type:'nuns:motion',time:motion.time,duration:motion.duration,running:motion.running,scenario},location.origin);};
   motion.onupdate=report;report();
   const receive=(event:MessageEvent)=>{
-   if(!review||event.source!==parent||event.origin!==location.origin||event.data?.type!=='nuns:transport')return;
+   if(!review||event.source!==parent||event.origin!==location.origin)return;
+   if(event.data?.type==='nuns:projection'&&publicView&&encounterMode){incoming=event.data.view;return;}
+   if(event.data?.type!=='nuns:transport')return;
    const {action,value}=event.data;
-   if(action==='capture')capture();else if(action==='replay')motion.replay();else if(action==='pause')motion.pause();else if(action==='resume')motion.resume();else if(action==='seek')motion.seek(Number(value)||0);else if(action==='speed')motion.speed(Number(value)||1);else if(action==='reset')reset();else if(action==='undo')undo();
+   if(action==='next-hearing')encounter?.nextHearing();else if(action==='capture')capture();else if(action==='replay')motion.replay();else if(action==='pause')motion.pause();else if(action==='resume')motion.resume();else if(action==='seek')motion.seek(Number(value)||0);else if(action==='speed')motion.speed(Number(value)||1);else if(action==='reset')reset();else if(action==='undo'){if(encounterMode==='novice')encounter?.undoPlanning();else if(!encounterMode)undo();}
   };
   window.addEventListener('message',receive);
   return()=>{window.removeEventListener('message',receive);motion.onupdate=undefined;motion.clear();};
@@ -39,7 +46,7 @@
 <div class="interaction-scene" class:public-table={publicView} class:board-scene={boardScene} data-scenario={scenario}>
  {#if !boardScene}<header class="play-header"><span class="play-title">{titles[scenario]??'The abbey'}</span><span>{publicView?'Night 6':'Celeste'}</span></header>{/if}
  <main class="play-content">
- {#key revision}<section class="play-pieces" class:board-pieces={boardScene} aria-label={boardScene?'Abbey board':titles[scenario]}><Component {kind} state={fixture} {motion} tabletop={publicView} onchoice={choose} inspectDot={selection} oninspect={dot=>selection=dot} onundo={undo} canUndo={!!history.length}/>
+ {#key revision}<section class="play-pieces" class:board-pieces={boardScene} aria-label={boardScene?'Abbey board':titles[scenario]}>{#if encounterMode}<EncounterBoard bind:this={encounter} mode={encounterMode} publicView={publicView&&scene.private} tabletop={publicView} {motion} {incoming} onprojection={project}/>{:else}<Component {kind} state={fixture} {motion} tabletop={publicView} onchoice={choose} inspectDot={selection} oninspect={dot=>selection=dot} onundo={undo} canUndo={!!history.length}/>{/if}
  {#if !boardScene&&['wish','blessing','patrol'].includes(scenario)}<button class="enlarge-piece" onclick={inspect} aria-label="Enlarge card">⤢</button>{/if}
  </section>{/key}
  {#if scenario==='caught'&&!hidden}<p class="dependent-fixture">Movement: <b>{fixture.speed}</b> · Key: <b>{fixture.key?'kept':'none'}</b> · Medicine: <b>{fixture.medicine?'held':'returned'}</b></p>{/if}

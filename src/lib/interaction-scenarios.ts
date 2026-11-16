@@ -1,5 +1,10 @@
 import type {Kind} from './catalog';
 export const scenarios: {id:string; name:string; kind:Kind; hint:string; private:boolean}[] = [
+ {id:'novice',name:'Control a novice',kind:'board',hint:'On the private phone, choose speed, tap adjacent map spaces, Undo a step, then commit. The public table receives only the revealed speed and sightings.',private:true},
+ {id:'hearing',name:'Guard hears a noise',kind:'board',hint:'Roll to listen: fixture result 6, walking novice modifier −1. A directional bell appears beside the Abbess, without exposing the hidden source. Move toward the clue.',private:false},
+ {id:'sight',name:'Guard spots a novice',kind:'board',hint:'Tap the Abbess and face East. Celeste appears in the corridor. Face West to check that an out-of-sight novice disappears.',private:false},
+ {id:'capture',name:'Catch a novice on the map',kind:'board',hint:'Move the Abbess from 18 onto Celeste at 19. Capture resolves automatically: score +1, Walk, medicine returned, key retained. Reset to repeat.',private:false},
+ {id:'false-noise',name:'Use False Noise on the map',kind:'board',hint:'Open the blessing on the private phone, select a direction beside the Abbess, then confirm or cancel. The public clue looks like any noise. Use Next hearing phase to review delayed reveal. Direction targets are an explicit placement fixture; card-specific restrictions await card transcription.',private:true},
  {id:'movement',name:'Choose movement',kind:'movement',hint:'Tap one of the four movement cards, then Undo. Only one card stays selected.',private:true},
  {id:'wish',name:'Reveal / conceal wish',kind:'wish',hint:'Turn the card over, replay the flip, then conceal it again.',private:true},
  {id:'blessing',name:'Turn a blessing',kind:'blessing',hint:'Turn the card and check both text wells at rest.',private:true},
