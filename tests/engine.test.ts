@@ -16,7 +16,7 @@ test('versioned setup deals unique wishes and all eight blessing cards for 2, 7 
  assert.throws(()=>applyIntent(game(),'wrong',{type:'patrol',guard:'abbess',card:1}),/belongs/);
 });
 test('first round has two simultaneous movements with the same selected card',()=>{
- let s=choosePatrols(game(3));s=applyIntent(s,'novice0',{type:'novice-move',speed:'Still',route:[1]});assert.equal(s.phase,'novices');assert.equal(publicGame(s).novices[0].speed,null);
+ let s=choosePatrols(game(3));s=applyIntent(s,'novice0',{type:'novice-move',speed:'Still',route:[1]});assert.equal(s.phase,'novices');assert.equal(publicGame(s).novices[0].speed,'Still');
  s=applyIntent(s,'novice1',{type:'novice-move',speed:'Still',route:[2]});assert.equal(s.segment,2);assert.equal(s.phase,'novices');
  assert.throws(()=>applyIntent(s,'novice0',{type:'novice-move',speed:'Run',route:[1,21]}),/same movement/);
  for(const n of s.novices)s=applyIntent(s,n.uid,{type:'novice-move',speed:'Still',route:[n.dot]});assert.equal(s.phase,'guards');
@@ -69,5 +69,32 @@ for(const count of [2,7,8])test(`complete ${count}-player game reaches round 15 
 test('replay is immutable, detects holes/versions, and diagnoses illegal attributed inputs without partial changes',()=>{
  const events:GameEvent[]=[{version:1,id:'create-0001',actor:'host',sequence:1,intent:{type:'create',capacity:2,mode:'personal'}},{version:1,id:'join-00001',actor:'alice',sequence:2,intent:{type:'join',name:'Alice',role:'novice',character:0}},{version:1,id:'bad-start1',actor:'alice',sequence:3,intent:{type:'start',seed:1}}];
  const original=structuredClone(events),result=replay(events);assert.deepEqual(events,original);assert.equal(result.state?.phase,'lobby');assert.equal(result.state?.revision,3);assert.equal(result.diagnostics.length,1);
- assert.throws(()=>replay([events[0],{...events[1],sequence:3}]),/gap/);assert.throws(()=>replay([{...events[0],version:2} as unknown as GameEvent]),/version/);
+ assert.throws(()=>replay([events[0],{...events[1],sequence:3}]),/gap/);assert.throws(()=>replay([{...events[0],version:3} as unknown as GameEvent]),/version/);
+});
+test('first-turn undo preserves history and can repeat both moves across a simultaneous barrier',()=>{
+ let s=choosePatrols(game(3));s=applyIntent(s,'novice0',{type:'novice-move',speed:'Sneak',route:[1,21]});
+ s=applyIntent(s,'novice0',{type:'novice-undo'});assert.equal(s.novices[0].dot,1);assert.equal(s.novices[0].firstSpeed,null);
+ s=applyIntent(s,'novice0',{type:'novice-move',speed:'Still',route:[1]});s=applyIntent(s,'novice1',{type:'novice-move',speed:'Still',route:[2]});assert.equal(s.segment,2);
+ s=applyIntent(s,'novice0',{type:'novice-undo'});s=applyIntent(s,'novice1',{type:'novice-move',speed:'Still',route:[2]});
+ s=applyIntent(s,'novice0',{type:'novice-move',speed:'Sneak',route:[1,21]});assert.equal(s.novices[0].submitted,false);assert.equal(s.phase,'novices');
+ s=applyIntent(s,'novice0',{type:'novice-move',speed:'Sneak',route:[21,20]});assert.equal(s.phase,'guards');
+ s=applyIntent(s,'novice0',{type:'novice-undo'});assert.equal(s.novices[0].dot,1);assert.equal(s.novices[1].log.length,2);
+ s=applyIntent(s,'novice0',{type:'novice-move',speed:'Still',route:[1]});s=applyIntent(s,'novice0',{type:'novice-move',speed:'Still',route:[1]});
+ s=applyIntent(s,'host',{type:'guard-speed',guard:'abbess',speed:'Walk'});assert.throws(()=>applyIntent(s,'novice0',{type:'novice-undo'}),/first turn/);
+ s.round=2;assert.throws(()=>applyIntent(s,'novice0',{type:'novice-undo'}),/first turn/);
+});
+test('unseen recovery keeps the novice at the end of her walk, and legacy events keep their original replay',()=>{
+ let s=choosePatrols(game());s.round=2;s.novices[0].dot=43;s.novices[0].caught=true;s.novices[0].character=3;s.guards.forEach(g=>{g.dot=147;g.facing='North';});
+ const intent:Intent={type:'novice-move',speed:'Walk',route:[43,23,22,21]};
+ const now=applyIntent(s,'novice0',intent);assert.equal(now.novices[0].dot,21);assert.equal(now.novices[0].caught,false);assert.equal(now.novices[0].immuneRound,2);
+ const old=applyEvent(s,{version:1,id:'legacy-recovery',sequence:s.revision+1,actor:'novice0',intent});assert.equal(old.novices[0].dot,4);
+ const modern=applyEvent(s,{version:2,id:'modern-recovery',sequence:s.revision+1,actor:'novice0',intent});assert.equal(modern.novices[0].dot,21);
+});
+test('patrol paths and committed speeds are public without exposing novice paths',()=>{
+ let s=choosePatrols(game(3));const projected=publicGame(s);assert.deepEqual(projected.guards[0].path,s.guards[0].patrol!.path);assert.match(projected.messages.join('\n'),/chose .* patrol: .*→/);
+ s=applyIntent(s,'novice0',{type:'novice-move',speed:'Still',route:[1]});assert.equal(publicGame(s).novices[0].speed,'Still');assert.match(s.messages.at(-1)!,/Anne Marie chose Still/);assert.equal('log' in publicGame(s).novices[0],false);
+});
+test('recovery allows the remaining walking steps to turn freely immediately after losing sight',()=>{
+ let s=choosePatrols(game());s.round=2;s.novices[0].dot=43;s.novices[0].caught=true;s.novices[0].character=3;s.guards.forEach(g=>{g.dot=147;g.facing='North';});
+ const next=applyIntent(s,'novice0',{type:'novice-move',speed:'Walk',route:[43,23,43,42]});assert.equal(next.novices[0].dot,42);assert.equal(next.novices[0].caught,false);
 });

@@ -1,6 +1,6 @@
 import {ref,onValue,runTransaction,get,type Database,type Unsubscribe} from 'firebase/database';
 import {replay,applyEvent} from '../game/engine.ts';
-import type {GameEvent,Intent} from '../game/model.ts';
+import {ENGINE_VERSION,type GameEvent,type Intent} from '../game/model.ts';
 export const validCode=(code:string)=>/^[A-HJ-NP-Z2-9]{6}$/.test(code);
 export function roomCode(){const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',bytes=crypto.getRandomValues(new Uint8Array(6));return [...bytes].map(n=>chars[n%32]).join('');}
 export type Pending={event:GameEvent};
@@ -45,7 +45,7 @@ export function repository(db:Database,uid:string,code:string,callbacks:{events:
  return {
   append(intent:Intent){return serialized(async()=>{
    const existing=memory??read(storage,key);if(existing)throw Error('Retry the pending choice before sending another.');
-   const event:GameEvent={version:1,id:crypto.randomUUID(),actor:uid,sequence:events.length+1,intent:JSON.parse(JSON.stringify(intent))};
+   const event:GameEvent={version:ENGINE_VERSION,id:crypto.randomUUID(),actor:uid,sequence:events.length+1,intent:JSON.parse(JSON.stringify(intent))};
    applyEvent(replay(events).state,event);const pending={event};retain(pending);await send(pending);
   });},
   retry(){return serialized(async()=>{const pending=memory??read(storage,key);if(pending)await send(pending);});},

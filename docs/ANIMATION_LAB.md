@@ -6,7 +6,7 @@ Run `npm run dev` and open `/lab/`. The root route is the actual game entrance. 
 
 The board walkthroughs and live Firebase rooms mount **the same `GameSurface.svelte`**. It uses the shared `MovementHand`, `Abbey`, `ArtCard`, `AbbessPawn`, dice, direct map controls and animation presenter. The novice’s first step displays the same four illustrated cards as Choose movement. No second speed-selector implementation remains.
 
-`lab/fixtures.ts` supplies explicit starting positions and a seeded die result of 6. Every action after that seed goes through `applyEvent`/`applyIntent` from the production engine. There is no independent encounter reducer. The lab’s transport changes playback only; Replay never submits another game action. The lab-only next-hearing control advances through legal fixture inputs outside the player surface.
+`lab/fixtures.ts` supplies explicit starting positions and a seeded die result of 6. The novice walkthrough uses Letter from Lover to review objective-specific illustration and popup layout. Every action after that seed goes through `applyEvent`/`applyIntent` from the production engine. There is no independent encounter reducer. The lab’s transport changes playback only; Replay never submits another game action. The lab-only next-hearing control advances through legal fixture inputs outside the player surface.
 
 | Walkthrough | Actions |
 | --- | --- |

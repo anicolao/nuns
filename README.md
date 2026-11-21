@@ -6,7 +6,7 @@ A browser-based digital adaptation of Fréderic Moyersoen’s **Nuns on the Run*
 
 Open the entrance, create a room, and share its six-character code or QR invitation. Choose a novice or guard seat, mark ready, and let the host start. One player controls both guards through seven players; an eight-player room has two guard players and six novices.
 
-Novices choose among the illustrated movement cards, plan directly on their private maps, edit uncommitted steps, and commit. Both first-round moves use the same card. Their key and wish are collected automatically at the appropriate locations. Guards select patrols, move by tapping or dragging their pieces, finish their walking/running movement, and resolve hearing. Sight, vanished and noise clues, captures, recovery, the 15-round limit, ties and rematches come from the same deterministic reducer.
+Novices choose among the illustrated movement cards, plan directly on their private maps, edit uncommitted steps, and commit. Both first-round moves use the same card. Their key and wish are collected automatically at the appropriate locations. Chosen patrol routes and committed novice movement speeds are public, including in the game log. Map toggles show visibility barriers and the spaces visible to each guard. Guards select patrols, move by tapping or dragging their pieces, finish their walking/running movement, and resolve hearing. Sight, vanished and noise clues, captures, recovery, the 15-round limit, ties and rematches come from the same deterministic reducer.
 
 All four blessing effects are available from the private hand: Extra Move, noise-distance adjustment, re-roll and False Noise. A pending die result leaves time for a blessing before hearing resolves. False Noise is targeted on the map and its identity stays concealed until the specified delayed reveal.
 
@@ -19,7 +19,7 @@ Routes:
 - `/lab/`: animation and production interaction review.
 - `/gallery/`: original Moonlit Storybook component inventory.
 
-The shared display exposes public guard actions while wishes, novice routes and private blessing decisions stay on their owners’ phones. Reloading restores the same anonymous seat and reconstructs play from immutable history. Route edits can be undone before commit; revealed input history is never rewritten.
+The shared display exposes public guard actions while wishes, novice routes and private blessing decisions stay on their owners’ phones. Reloading restores the same anonymous seat and reconstructs play from immutable history. Route edits can be undone before commit. On the first turn only, novices can also undo both movements until a guard acts; the undo is an explicit event and never rewrites history. Caught novices become free at their current location as soon as no guard can see them, including during their walk.
 
 ## Development and verification
 

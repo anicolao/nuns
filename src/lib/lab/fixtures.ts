@@ -16,7 +16,7 @@ export function seedGameFixture(mode:FixtureMode):RoomState {
  if(mode==='hearing'||mode==='false-noise'){s.phase='guard-hearing';g.speed='Walk';g.rolled=mode==='false-noise';g.finished=true;s.guards[1].speed='Run';s.guards[1].finished=true;}
  if(mode==='capture'||mode==='sight'){s.phase='guards';g.finished=false;g.free=mode==='capture';g.facing=mode==='sight'?'West':'East';g.patrol={card:2,path:[...board.guardRoutes[2].path],index:(board.guardRoutes[2].path as number[]).indexOf(18)};}
  if(mode==='capture'){s.novices[0].key=true;s.novices[0].item=true;}
- if(mode==='novice')s.phase='novices';
+ if(mode==='novice'){s.phase='novices';s.novices[0].wish=8;}
  return s;
 }
 export function advanceFixtureHearing(start:RoomState){

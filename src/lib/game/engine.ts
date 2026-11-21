@@ -21,7 +21,7 @@ function capture(s:RoomState,g:Guard){
  for(const n of s.novices)if(n.dot===g.dot&&!n.caught&&n.immuneRound!==s.round&&n.dot!==n.character+1){n.caught=true;n.item=false;n.speed='Walk';n.captures++;s.captures++;say(s,`${noviceNames[n.character]} was caught by the ${g.id==='abbess'?'Abbess':'Prioress'}.`);}
  if(s.captures>=s.seats.length){s.phase='ended';s.winnerTeam='guards';s.winners=[...new Set(s.guards.map(g=>g.uid))];say(s,'The guards win by captures.');}
 }
-function checkSight(s:RoomState){for(const g of s.guards){if(evidence(s,g))g.free=true;}}
+function checkSight(s:RoomState,legacy=false){for(const g of s.guards){if(evidence(s,g))g.free=true;}if(!legacy)for(const n of s.novices)if(n.caught&&!isNoviceVisible(s,n)){n.caught=false;n.immuneRound=s.round;}}
 function beginGuards(s:RoomState){s.phase='guards';for(const g of s.guards){g.steps=0;g.finished=false;g.extra=false;g.speed='Walk';g.free=evidence(s,g);prepareFacing(s,g);}say(s,'The guards move.');}
 function beginNovices(s:RoomState){s.phase='novices';for(const n of s.novices){n.submitted=false;n.rolled=n.caught||n.immuneRound===s.round;n.extra=false;}say(s,`Round ${s.round}${s.round===1?` · movement ${s.segment}/2`:''}: novices plan privately.`);}
 function afterNovices(s:RoomState){
@@ -36,7 +36,7 @@ function setup(s:RoomState,seed:number){
  need(s.seats.length>=2&&s.seats.length<=8,'Two to eight players are required.');need(ns.length>=1&&ns.length<=6,'One to six novices are required.');need(guards.length===(s.seats.length===8?2:1),'Use one guard player, or two guard players in an eight-player game.');
  const rng=random(seed),wishes=shuffle(board.keys.map(k=>k.id),rng),deck=shuffle(['extra-move','distance','reroll','false-noise','extra-move','distance','reroll','false-noise'] as Blessing['kind'][],rng);
  const deal=():Blessing=>({kind:deck.pop()!,used:false,revealRound:null});
- s.seed=seed;s.epoch++;s.round=1;s.segment=1;s.captures=0;s.clues=[];s.pending=null;s.winners=[];s.winnerTeam=null;s.availablePatrols=Array.from({length:16},(_,i)=>i);
+ s.firstTurnUndoClosed=false;s.seed=seed;s.epoch++;s.round=1;s.segment=1;s.captures=0;s.clues=[];s.pending=null;s.winners=[];s.winnerTeam=null;s.availablePatrols=Array.from({length:16},(_,i)=>i);
  s.novices=ns.map(p=>({uid:p.uid,character:p.character,dot:p.character+1,wish:wishes.pop()!,key:false,item:false,caught:false,captures:0,speed:'Sneak',firstSpeed:null,submitted:false,rolled:false,immuneRound:0,extra:false,blessing:deal(),log:[]}));
  s.guards=(['abbess','prioress'] as GuardId[]).map((id,i)=>({id,uid:guards[i%guards.length].uid,dot:26,facing:'South',speed:'Walk',lastSpeed:null,steps:0,finished:false,rolled:false,free:false,extra:false,patrol:null,blessing:deal()}));s.phase='patrols';say(s,'Choose each guard’s first patrol.');
 }
@@ -56,7 +56,7 @@ export function guardCanFinish(g:Guard){return !g.finished&&g.steps>=(g.speed===
 export function noviceBounds(n:Novice,speed=n.speed){const normal=speeds[speed];return{min:normal.min+(n.extra&&(speed==='Sneak'||speed==='Walk')?1:0),max:normal.max+(n.extra&&speed!=='Still'?1:0)};}
 export function noviceOptions(s:RoomState,n:Novice,route:number[],speed=n.speed){
  const end=route.at(-1)??n.dot;if(s.phase!=='novices'||n.submitted||route.length-1>=noviceBounds(n,speed).max)return[];
- if(n.caught){const home=n.character+1,d=shortestPath(end,home,n.key).length-1;return neighbors(end).filter(next=>(n.key||!isLocked(end,next))&&shortestPath(next,home,n.key).length-1===d-1);}
+ if(n.caught&&!route.slice(1).some(dot=>!s.guards.some(g=>isVisible(g.dot,dot,g.facing)))){const home=n.character+1,d=shortestPath(end,home,n.key).length-1;return neighbors(end).filter(next=>(n.key||!isLocked(end,next))&&shortestPath(next,home,n.key).length-1===d-1);}
  const wish=board.keys.find(k=>k.id===n.wish)!;if(n.key&&end===wish.goalnode&&route.length>1)return[];
  return neighbors(end).filter(next=>n.key||!isLocked(end,next));
 }
@@ -68,13 +68,15 @@ function resolve(s:RoomState){
  if(p.roller==='abbess'||p.roller==='prioress')s.guards.find(g=>g.id===p.roller)!.rolled=true;else s.novices.find(n=>n.uid===p.roller)!.rolled=true;
  s.pending=null;if(s.phase==='novice-hearing'&&s.novices.every(n=>n.rolled))afterNoviceHearing(s);
 }
-export function applyIntent(previous:RoomState|null,actor:string,intent:Intent):RoomState {
+export function canUndoFirstTurn(s:RoomState,n:Novice){return s.round===1&&!s.firstTurnUndoClosed&&['novices','guards'].includes(s.phase)&&n.captures===0&&n.log.some(e=>e.round===1)&&s.guards.every(g=>g.steps===0&&!g.finished&&!g.extra);}
+export function applyIntent(previous:RoomState|null,actor:string,intent:Intent,legacy=false):RoomState {
  need(typeof actor==='string'&&actor.length>0,'An authenticated actor is required.');need(intent&&typeof intent.type==='string','Malformed choice.');
  if(intent.type==='create'){
   need(!previous,'This room already exists.');need(Number.isInteger(intent.capacity)&&intent.capacity>=2&&intent.capacity<=8,'Capacity must be two to eight.');need(['personal','tabletop'].includes(intent.mode),'Unknown room mode.');
-  return {version:1,edition:EDITION,revision:0,host:actor,mode:intent.mode,capacity:intent.capacity,seats:[],phase:'lobby',round:0,segment:0,seed:0,epoch:0,novices:[],guards:[],availablePatrols:[],clues:[],captures:0,pending:null,winners:[],winnerTeam:null,messages:['The abbey is open. Join a side.']};
+  return {version:legacy?1:2,edition:legacy?'mayfair-2010-v1':EDITION,revision:0,host:actor,mode:intent.mode,capacity:intent.capacity,seats:[],phase:'lobby',round:0,segment:0,seed:0,epoch:0,novices:[],guards:[],availablePatrols:[],clues:[],captures:0,pending:null,winners:[],winnerTeam:null,messages:['The abbey is open. Join a side.']};
  }
  need(previous,'Create the room first.');const s=structuredClone(previous);
+ if(s.round===1&&s.phase==='guards'&&['patrol','guard-speed','guard-step','guard-finish'].includes(intent.type))s.firstTurnUndoClosed=true;
  switch(intent.type){
  case 'join':{
   need(s.phase==='lobby','The game has already begun.');need(!s.seats.some(p=>p.uid===actor),'You already have a seat.');need(s.seats.length<s.capacity,'This room is full.');
@@ -91,30 +93,36 @@ export function applyIntent(previous:RoomState|null,actor:string,intent:Intent):
   need(s.phase==='patrols'||s.phase==='guards','Choose patrols before or during guard movement.');const g=guard(s,intent.guard,actor);need(!g.finished,'This guard has finished moving.');need(availablePatrols(s,g).includes(intent.card),'Choose an available patrol at this endpoint, or an About Turn card.');
   if(intent.card>=14){const path=[...g.patrol!.path].reverse();g.patrol={card:g.patrol!.card,path,index:path.indexOf(g.dot)};}
   else {const route=board.guardRoutes[intent.card];const path=route.a===g.dot?[...route.path]:[...route.path].reverse();g.patrol={card:intent.card,path,index:0};}
-  s.availablePatrols=s.availablePatrols.filter(card=>card!==intent.card);prepareFacing(s,g);say(s,`${g.id==='abbess'?'Abbess':'Prioress'} selected a patrol.`);
+  s.availablePatrols=s.availablePatrols.filter(card=>card!==intent.card);prepareFacing(s,g);say(s,`${g.id==='abbess'?'Abbess':'Prioress'} chose ${intent.card>=14?'About Turn':board.guardRoutes[intent.card].colour+' patrol'}: ${g.patrol.path.join(' → ')}.`);
   if(s.phase==='patrols'&&s.guards.every(g=>g.patrol))beginNovices(s);break;
  }
  case 'novice-move':{
   need(s.phase==='novices','It is not novice movement.');const n=novice(s,actor);need(!n.submitted,'Your movement is already committed.');need(Object.hasOwn(speeds,intent.speed),'Unknown speed.');
   need(Array.isArray(intent.route)&&intent.route.length>=1&&intent.route.length<=7&&intent.route.every(dot=>Number.isInteger(dot)&&nodeById.has(dot)),'Invalid route.');need(intent.route[0]===n.dot,'Start at your current position.');
   if(n.caught)need(intent.speed==='Walk','A caught novice must walk home.');
-  if(s.round===1&&s.segment===2&&!n.caught)need(intent.speed===n.firstSpeed,'Use the same movement card for both first-round moves.');
+  if(s.round===1&&s.segment===2&&n.firstSpeed!==null&&!n.caught)need(intent.speed===n.firstSpeed,'Use the same movement card for both first-round moves.');
   const steps=intent.route.length-1,bounds=noviceBounds(n,intent.speed);need(steps<=bounds.max&&(steps>=bounds.min||(n.caught&&intent.route.at(-1)===n.character+1)),'This route does not match your movement card.');
   for(let i=1;i<intent.route.length;i++){
    const from=intent.route[i-1],to=intent.route[i];need(neighbors(from).includes(to),'Every step must be adjacent.');need(n.key||!isLocked(from,to),'You need your key to open this door.');
    if(n.caught)need(shortestPath(to,n.character+1,n.key).length===shortestPath(from,n.character+1,n.key).length-1,'Walk toward your cell by a shortest legal route.');
-   const before=seenBy(s,n);n.dot=to;const after=seenBy(s,n);
+   const clueCount=s.clues.length;const before=seenBy(s,n);n.dot=to;const after=seenBy(s,n);
    if(!n.caught&&before.length&&!after.length)addClue(s,'vanished',from,to,null);
-   checkSight(s);
+   if(s.round===1)n.firstTurnClueIds=[...(n.firstTurnClueIds??[]),...s.clues.slice(clueCount).map(c=>c.id)];
+   checkSight(s,legacy);
    if(s.guards.some(g=>g.dot===n.dot)){need(i===intent.route.length-1,'Movement ends when a guard catches you.');for(const g of s.guards)capture(s,g);}
    const wish=board.keys.find(k=>k.id===n.wish)!;
    if(!n.caught&&n.key&&to===wish.goalnode){need(i===intent.route.length-1,'Stop when you reach your wish.');n.item=true;}
   }
-  n.speed=n.caught?'Walk':intent.speed;n.submitted=true;if(s.round===1&&s.segment===1)n.firstSpeed=n.speed;
+  n.speed=n.caught?'Walk':intent.speed;n.submitted=true;if(s.round===1&&n.firstSpeed===null)n.firstSpeed=n.speed;
   const wish=board.keys.find(k=>k.id===n.wish)!;if(!n.caught&&n.dot===wish.node)n.key=true;
-  if(n.caught&&(!isNoviceVisible(s,n)||n.dot===n.character+1)){n.dot=n.character+1;n.caught=false;n.immuneRound=s.round;}
-  n.log.push({round:s.round,segment:s.segment,route:[...intent.route],speed:n.speed,key:n.key,item:n.item});say(s,`${noviceNames[n.character]} committed movement.`);
+  if(n.caught&&(!isNoviceVisible(s,n)||n.dot===n.character+1)){if(legacy)n.dot=n.character+1;n.caught=false;n.immuneRound=s.round;}
+  n.log.push({round:s.round,segment:s.round===1?n.log.filter(e=>e.round===1).length+1:s.segment,route:[...intent.route],speed:n.speed,key:n.key,item:n.item});say(s,`${noviceNames[n.character]} chose ${n.speed}${s.round===1?' · movement '+(n.log.filter(e=>e.round===1).length)+'/2':''}.`);
+  if(s.round===1&&s.segment===2&&n.log.filter(e=>e.round===1).length<2)n.submitted=false;
   if(!ended(s)&&s.novices.every(n=>n.submitted))afterNovices(s);break;
+ }
+ case 'novice-undo':{
+  const n=novice(s,actor);need(!legacy&&canUndoFirstTurn(s,n),'Only your first turn can be undone, before a guard acts.');
+  s.clues=s.clues.filter(c=>!n.firstTurnClueIds?.includes(c.id));n.firstTurnClueIds=[];n.dot=n.character+1;n.key=false;n.item=false;n.caught=false;n.immuneRound=0;n.speed='Sneak';n.firstSpeed=null;n.submitted=false;n.log=n.log.filter(e=>e.round!==1);s.phase='novices';say(s,`${noviceNames[n.character]} undid her first turn.`);break;
  }
  case 'novice-roll':{
   need(s.phase==='novice-hearing'&&!s.pending,'Wait for the current noise roll.');const n=novice(s,actor);need(!n.rolled&&!n.caught,'No noise roll is due for you.');need(Number.isInteger(intent.value)&&intent.value>=1&&intent.value<=6,'A die result must be 1–6.');s.pending={roller:n.uid,value:intent.value,adjustments:{}};say(s,`${noviceNames[n.character]} rolled ${intent.value} for noise.`);break;
@@ -122,9 +130,9 @@ export function applyIntent(previous:RoomState|null,actor:string,intent:Intent):
  case 'guard-speed':{need(s.phase==='guards','It is not guard movement.');const g=guard(s,intent.guard,actor);need(g.steps===0&&!g.finished,'Choose speed before moving.');need(intent.speed==='Walk'||intent.speed==='Run','Guards walk or run.');g.speed=intent.speed;break;}
  case 'guard-step':{
   need(s.phase==='guards','It is not guard movement.');const g=guard(s,intent.guard,actor);need(legalGuardSteps(s,g).includes(intent.dot),'Choose a lit legal step on the patrol, or follow qualifying evidence.');
-  g.facing=facingBetween(g.dot,intent.dot);checkSight(s);g.dot=intent.dot;g.steps++;
+  g.facing=facingBetween(g.dot,intent.dot);checkSight(s,legacy);g.dot=intent.dot;g.steps++;
   if(g.patrol){const i=g.patrol.path.indexOf(g.dot,g.patrol.index);if(i>=0)g.patrol.index=i;}
-  checkSight(s);capture(s,g);if(!ended(s))prepareFacing(s,g);break;
+  checkSight(s,legacy);capture(s,g);if(!ended(s))prepareFacing(s,g);break;
  }
  case 'guard-finish':{
   need(s.phase==='guards','It is not guard movement.');const g=guard(s,intent.guard,actor);need(guardCanFinish(g),'Walk 3–4 spaces or run 5–6 before finishing.');g.finished=true;g.lastSpeed=g.speed;say(s,`${g.id==='abbess'?'Abbess':'Prioress'} ${g.speed==='Walk'?'walked':'ran'} ${g.steps} spaces.`);
@@ -154,5 +162,5 @@ export function applyIntent(previous:RoomState|null,actor:string,intent:Intent):
  }
  return s;
 }
-export function applyEvent(s:RoomState|null,e:GameEvent){need(e.version===ENGINE_VERSION,'This room needs a different engine version.');need(e.sequence===(s?.revision??0)+1,'Event sequence gap.');need(typeof e.id==='string'&&e.id.length>=8,'Invalid choice ID.');const next=applyIntent(s,e.actor,e.intent);next.revision=e.sequence;return next;}
-export function replay(events:GameEvent[]){let state:RoomState|null=null;const diagnostics:{sequence:number;reason:string}[]=[];const ids=new Set<string>();for(const e of [...events].sort((a,b)=>a.sequence-b.sequence)){need(e.version===ENGINE_VERSION,'This room needs a different engine version.');need(e.sequence===revisionOf(state)+1,'The event log has a gap.');try{need(!ids.has(e.id),'Duplicate choice ID.');state=applyEvent(state,e);ids.add(e.id);}catch(error){if(!state)throw error;diagnostics.push({sequence:e.sequence,reason:error instanceof Error?error.message:String(error)});state={...state,revision:e.sequence};}}return{state,diagnostics};}
+export function applyEvent(s:RoomState|null,e:GameEvent){need(e.version===1||e.version===ENGINE_VERSION,'This room needs a different engine version.');need(e.sequence===(s?.revision??0)+1,'Event sequence gap.');need(typeof e.id==='string'&&e.id.length>=8,'Invalid choice ID.');const next=applyIntent(s,e.actor,e.intent,e.version===1);next.version=e.version;next.edition=e.version===1?'mayfair-2010-v1':EDITION;next.revision=e.sequence;return next;}
+export function replay(events:GameEvent[]){let state:RoomState|null=null;const diagnostics:{sequence:number;reason:string}[]=[];const ids=new Set<string>();for(const e of [...events].sort((a,b)=>a.sequence-b.sequence)){need(e.version===1||e.version===ENGINE_VERSION,'This room needs a different engine version.');need(e.sequence===revisionOf(state)+1,'The event log has a gap.');try{need(!ids.has(e.id),'Duplicate choice ID.');state=applyEvent(state,e);ids.add(e.id);}catch(error){if(!state)throw error;diagnostics.push({sequence:e.sequence,reason:error instanceof Error?error.message:String(error)});state={...state,revision:e.sequence};}}return{state,diagnostics};}

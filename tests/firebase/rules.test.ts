@@ -20,11 +20,16 @@ test('attributed contiguous immutable events are the only writable application d
  await assertFails(alice.ref('rooms/RULEBB').remove());
  await assertFails(alice.ref('rooms/RULEBB/currentState').set({round:2}));
  await assertFails(alice.ref('rooms/RULEBB/events/3').set({...event('alice',3),computedState:{round:10}}));
- await assertFails(alice.ref('rooms/RULEBB/events/3').set({...event('alice',3),version:2}));
+ await assertFails(alice.ref('rooms/RULEBB/events/3').set({...event('alice',3),version:3}));
  const snapshot=await assertSucceeds(alice.ref('rooms/RULEBB/events').get());assert.equal(snapshot.numChildren(),2);
 });
 test('the first event must create a room and slot keys must match sequence',async()=>{
  const db=env.authenticatedContext('alice').database();
  await assertFails(db.ref('rooms/RULECC/events/1').set({...event('alice'),intent:{type:'start',seed:1}}));
  await assertFails(db.ref('rooms/RULECC/events/2').set(event('alice')));
+});
+test('current version can append undo after a legacy event without mutating it',async()=>{
+ const db=env.authenticatedContext('alice').database();await assertSucceeds(db.ref('rooms/RULEDD/events/1').set(event('alice')));
+ await assertSucceeds(db.ref('rooms/RULEDD/events/2').set({...event('alice',2),version:2,intent:{type:'novice-undo'}}));
+ const snapshot=await db.ref('rooms/RULEDD/events/1').get();assert.equal(snapshot.val().version,1);
 });

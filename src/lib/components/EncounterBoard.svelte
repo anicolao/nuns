@@ -9,7 +9,7 @@
  const seed=()=>publicView?null:seedGameFixture(mode);
  let game=$state(seed()),error=$state('');
  const actor=$derived(mode==='novice'||mode==='false-noise'?'novice':'guard');
- function send(intent:Intent){if(!game)return;try{game=applyEvent($state.snapshot(game),{version:1,id:crypto.randomUUID(),sequence:game.revision+1,actor,intent});error='';}catch(e){error=e instanceof Error?e.message:String(e);}}
+ function send(intent:Intent){if(!game)return;try{game=applyEvent($state.snapshot(game),{version:2,id:crypto.randomUUID(),sequence:game.revision+1,actor,intent});error='';}catch(e){error=e instanceof Error?e.message:String(e);}}
  const seedPublic=()=>publicGame(seedGameFixture(mode));
  const fallback=$derived(incoming??seedPublic());
  $effect(()=>{if(game)onprojection?.(publicGame(game));});
