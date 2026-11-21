@@ -1,0 +1,52 @@
+{
+  "edition": "Mayfair Games, English first edition, 2010",
+  "retrieved": "2026-11-13",
+  "coordinateSpace": {
+    "width": 1000,
+    "height": 1038
+  },
+  "files": [
+    {
+      "path": "art/reference/original-board-online.png",
+      "url": "https://www.mind-maze.uk/nuns-on-the-run/board.ea23aa14.png",
+      "sha256": "491030251b763b1d1511f2e76b9af3c0e2bd169c295a86f37da669d1d892e314"
+    },
+    {
+      "path": "art/reference/original-board-los.jpg",
+      "url": "https://boardit.no/tools/nuns/los/img/board.jpg",
+      "sha256": "7e5fe40a0c8ae5eccc98771e5cefaade38884c9e79163f3bca514dc517f6ee30"
+    },
+    {
+      "path": "art/reference/rules-2010.pdf",
+      "url": "https://www.mind-maze.uk/nuns-on-the-run/rules/notr-rules.pdf",
+      "sha256": "0b86f40b977b4c263ff471bf6893a6a3ee5aecfdd793ed913b109bf4d522c20e"
+    }
+  ],
+  "factualDataSource": {
+    "url": "https://www.mind-maze.uk/nuns-on-the-run/App.fc5a5044.js",
+    "sha256": "4b7f69e40526a33f43e193715448402c8fcfce72a73dca7a1caf0c1a9d28d80e",
+    "retained": "Only declarative board facts in src/lib/game/board-manifest.json; application code is not vendored."
+  },
+  "independentCrossCheck": {
+    "url": "https://boardit.no/tools/nuns/los/js/spots.js",
+    "credit": "Roy Lazarovich, HTML line-of-sight utility; hosted by Tor Sverre Lund. Secondary check only; printed rules take precedence."
+  },
+  "normalization": {
+    "undirectedConnections": [
+      [
+        45,
+        46
+      ],
+      [
+        67,
+        68
+      ],
+      [
+        76,
+        77
+      ]
+    ],
+    "unusedRouteSlots": 2,
+    "printedVisibilityPairs": 897
+  }
+}

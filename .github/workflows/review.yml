@@ -1,0 +1,147 @@
+name: Verify and publish review
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-15.36.0
+      - run: npm ci
+      - run: npm run check
+      - run: npm run test:unit
+      - run: npm run build
+        env:
+          BASE_PATH: /nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:browser
+        env:
+          BASE_PATH: /nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}
+      - run: npm run test:backend
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: browser-evidence
+          path: test-results
+          if-no-files-found: ignore
+      - uses: actions/upload-artifact@v4
+        with:
+          name: verified-site
+          path: build
+  publish:
+    needs: verify
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    concurrency:
+      group: nuns-pages-publish
+      cancel-in-progress: false
+    permissions:
+      contents: read
+      actions: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: https://anicolao.github.io/nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}/
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: verified-site
+          path: verified-site
+      - name: Retain previews and prepare Pages artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+          REPOSITORY: ${{ github.repository }}
+          REPOSITORY_ID: ${{ github.repository_id }}
+          PREVIEW: ${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}
+          REVIEW_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$PREVIEW" =~ ^(pr[0-9]+|main)$ ]]
+          site_dir="$RUNNER_TEMP/nuns-pages"
+          remote="https://github.com/$REPOSITORY.git"
+          # Retain the last deployed bundle without requiring a repository push.
+          retained_run=$(gh api "repos/$REPOSITORY/actions/artifacts?name=retained-previews&per_page=100" --jq '[.artifacts[] | select(.expired == false and .workflow_run.head_repository_id == (env.REPOSITORY_ID | tonumber))] | sort_by(.created_at) | last | .workflow_run.id // empty')
+          if [ -n "$retained_run" ]; then
+            gh run download "$retained_run" --repo "$REPOSITORY" --name retained-previews --dir "$site_dir"
+          elif git ls-remote --exit-code --heads "$remote" gh-pages > /dev/null; then
+            # Bootstrap from previews published by the earlier workflow.
+            git clone --single-branch --branch gh-pages "$remote" "$site_dir"
+            rm -rf "$site_dir/.git"
+          else
+            mkdir -p "$site_dir"
+          fi
+          rm -rf "${site_dir:?}/${PREVIEW:?}"
+          mkdir -p "$site_dir/$PREVIEW"
+          cp -R verified-site/. "$site_dir/$PREVIEW/"
+          touch "$site_dir/.nojekyll"
+          node --input-type=module <<'JS'
+          import {writeFileSync,readdirSync} from 'node:fs';
+          const root=process.env.RUNNER_TEMP+'/nuns-pages';
+          writeFileSync(root+'/'+process.env.PREVIEW+'/preview.json',JSON.stringify({revision:process.env.REVIEW_SHA,preview:process.env.PREVIEW},null,2)+'\n');
+          const previews=readdirSync(root).filter(name=>/^(pr[0-9]+|main)$/.test(name));
+          writeFileSync(root+'/index.html','<!doctype html><html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Nuns on the Run reviews</title><h1>Nuns on the Run reviews</h1><ul>'+previews.map(name=>'<li><a href="./'+name+'/">'+name+' · Play game</a></li>').join('')+'</ul></html>');
+          JS
+          mkdir -p "$RUNNER_TEMP/pages-artifact"
+          cp -R "$site_dir/." "$RUNNER_TEMP/pages-artifact/"
+          rm -rf "$RUNNER_TEMP/pages-artifact/.git"
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: ${{ runner.temp }}/pages-artifact
+      - uses: actions/deploy-pages@v4
+      - name: Verify live preview revision
+        timeout-minutes: 2
+        env:
+          PREVIEW_URL: https://anicolao.github.io/nuns/${{ github.event.pull_request.number && format('pr{0}', github.event.pull_request.number) || 'main' }}/
+          REVIEW_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          node --input-type=module <<'JS'
+          const expected = process.env.REVIEW_SHA;
+          const url = new URL('preview.json', process.env.PREVIEW_URL);
+          for (let attempt = 0; attempt < 12; attempt++) {
+            url.searchParams.set('revision', expected);
+            url.searchParams.set('attempt', String(attempt));
+            try {
+              const response = await fetch(url, {signal: AbortSignal.timeout(5000)});
+              if (!response.ok) throw new Error(`HTTP ${response.status}`);
+              const preview = await response.json();
+              if (preview.revision === expected) {
+                console.log(`Live preview verified: ${expected}`);
+                process.exit(0);
+              }
+              console.log(`Waiting for ${expected}; live revision is ${preview.revision}`);
+            } catch (error) {
+              console.log(`Waiting for preview: ${error.message}`);
+            }
+            await new Promise(resolve => setTimeout(resolve, 5000));
+          }
+          throw new Error(`Live preview did not update to ${expected}`);
+          JS
+      # Save only after successful deployment, so the next run restores live previews.
+      - uses: actions/upload-artifact@v4
+        with:
+          name: retained-previews
+          overwrite: true
+          path: ${{ runner.temp }}/pages-artifact
+          include-hidden-files: true
+          retention-days: 90
